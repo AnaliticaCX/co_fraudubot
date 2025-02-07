@@ -1,9 +1,3 @@
- """
-Importante!!!!!!!!!!!!!!!!!!!!
-1. Descargar diccionario spacy---> python -m spacy download es_core_news_lg
-2. Para desplegar la aplicacion en local ejecutar en la terminal: streamlit run main.py
-"""
-
 import os
 import re
 import spacy

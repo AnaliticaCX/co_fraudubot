@@ -43,7 +43,7 @@ def extraccion_texto(file_path):
     return text
 
 
-#file_path = "Carta2.png"
-#text = extraccion_texto(file_path)
-#print(text)
+file_path = "Carta2.png"
+text = extraccion_texto(file_path)
+print(text)
 
