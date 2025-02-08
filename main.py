@@ -150,6 +150,43 @@ def calcular_probabilidad(fraude_data, cedula, model_rf, model_rl):
     return prob_ensamble[0], None
 
 # Interfaz de Streamlit
+st.set_page_config(page_title="Fraudubot", page_icon="🤖​")
+st.sidebar.markdown("""
+    ### Fraudubot
+    Detection of possible fraud
+    """)
+st.sidebar.markdown("---")
+# Show principal functions
+show_principal_functions = st.sidebar.checkbox("Show principal functions", value=False)
+if show_principal_functions:
+    st.sidebar.markdown("""
+    ### Principal functions
+    - **Procesar documento**: Se procesa el archivo adjunto (pueden ser pdf, docx, jpg o npg).
+    - **Extraer información**: Se extrae la información del **texto** encontrado en el archivo.
+    - **Validación de fraude**: Se calcula la **probabilidad de fraude** del documento.
+    """)
+
+# Show file types
+show_file_types = st.sidebar.checkbox("Show supported file types", value=False)
+if show_file_types:
+    st.sidebar.markdown("""
+    ### Supported file types
+    - **PDF** (Portable Document Format)
+    - **DOCX** (Word Document)
+    - **JPG o PNG** (Images)
+    """)
+
+# Show types_documents
+show_types_documents = st.sidebar.checkbox("Show types of documents", value=False)
+if show_types_documents:
+    st.sidebar.markdown("""
+    ### Types of documents
+    - **Cartas Laborales**
+    - **Colillas de pago**
+    - **Identificación** (CC)
+    """)  
+st.sidebar.markdown("---")
+
 st.markdown("""
 <style>
 .main { background-color: #f5f5f5; }
@@ -170,10 +207,10 @@ with col1:
     st.image("./GIF/Fraudubot7.gif", width=600)
 with col2:
     st.markdown("<div class='title'>Fraudubot 🛡️</div>", unsafe_allow_html=True)
-    st.markdown("<div class='subtitle'>Bot que te ayuda a detectar posibles fraudes</div>", unsafe_allow_html=True)
+    st.markdown("<div class='subtitle'>Bot that helps you detect possible fraud</div>", unsafe_allow_html=True)
 
 st.title("Procesamiento Carta Laboral 📄")
-uploaded_file = st.file_uploader("Sube un archivo PDF", type="pdf")
+uploaded_file = st.file_uploader("Upload a file", type="pdf")
 
 if uploaded_file:
     temp_file_path = os.path.join("temp", uploaded_file.name)
