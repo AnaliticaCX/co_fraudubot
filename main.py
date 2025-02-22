@@ -9,6 +9,7 @@ from word2number import w2n
 from pdf2image import convert_from_path
 import unicodedata
 import streamlit as st
+import time
 from PIL import Image
 
 # Configuración de Tesseract
@@ -149,13 +150,16 @@ def calcular_probabilidad(fraude_data, cedula, model_rf, model_rl):
 
     return prob_ensamble[0], None
 
+
+
 # Interfaz de Streamlit
 st.set_page_config(page_title="Fraudubot", page_icon="🤖​")
 st.sidebar.markdown("""
     ### Fraudubot
     Detection of possible fraud
     """)
-st.sidebar.markdown("---")
+
+st.image("./img/galgo.png", width=150)
 # Show principal functions
 show_principal_functions = st.sidebar.checkbox("Show principal functions", value=False)
 if show_principal_functions:
@@ -184,21 +188,22 @@ if show_types_documents:
     - **Cartas Laborales**
     - **Colillas de pago**
     - **Identificación** (CC)
-    """)  
+    """)
+
 st.sidebar.markdown("---")
+st.sidebar.image("./img/galgo.png", width=250)
 
 st.markdown("""
 <style>
 .main { background-color: #f5f5f5; }
-.title { color: #51a9ee; font-size: 36px; text-align: center; font-weight: bold; }
-.subtitle { color: #95ccf7; font-size: 24px; text-align: center; margin-top: -10px; }
-</style>
-""", unsafe_allow_html=True)
-
-st.markdown("""
-<style>
-.alert-high { color: white; background-color: #E74C3C; padding: 10px; border-radius: 5px; text-align: center; font-size: 20px; font-weight: bold; }
-.alert-low { color: white; background-color: #2ECC71; padding: 10px; border-radius: 5px; text-align: center; font-size: 20px; font-weight: bold; }
+.title { font-size: 40px; text-align: center; font-weight: bold; }
+.subtitleCenter {font-size: 24px; text-align: center; margin-top: -10px; }
+.subtitleLeft {font-size: 20px; }
+.colorTitle { color: #051B5F; }
+.colorContent { color: #051B5F; }
+            
+.alert-high { color: #FFFFFF; background-color: #ffc319; padding: 10px; border-radius: 5px; text-align: center; font-size: 20px; font-weight: bold; }
+.alert-low { color: #FFFFFF; background-color: #2ECC71; padding: 10px; border-radius: 5px; text-align: center; font-size: 20px; font-weight: bold; }
 </style>
 """, unsafe_allow_html=True)
 
@@ -206,31 +211,51 @@ col1, col2 = st.columns([1, 3])
 with col1:
     st.image("./GIF/Fraudubot7.gif", width=600)
 with col2:
-    st.markdown("<div class='title'>Fraudubot 🛡️</div>", unsafe_allow_html=True)
-    st.markdown("<div class='subtitle'>Bot that helps you detect possible fraud</div>", unsafe_allow_html=True)
+    st.markdown("<div class='title colorTitle'>Fraudubot 🛡️</div>", unsafe_allow_html=True)
+    st.markdown("<div class='subtitleCenter colorTitle'>Bot that helps you detect possible fraud</div>", unsafe_allow_html=True)
 
-st.title("Procesamiento Carta Laboral 📄")
-uploaded_file = st.file_uploader("Upload a file", type="pdf")
+colCl, colCp = st.columns([2, 2])
+with colCl:
+    st.markdown("<div class='subtitleCenter colorContent'>Carta Laboral</div>", unsafe_allow_html=True)
+    uploaded_file = st.file_uploader("Upload a file Carta Laboral", type="pdf, png, jpg", label_visibility="collapsed")
+with colCp:
+    st.markdown("<div class='subtitleCenter colorContent'>Colillas de Pago</div>", unsafe_allow_html=True)
+    uploaded_file_col = st.file_uploader("Upload a file Colillas de Pago", type="pdf, png, jpg", label_visibility="collapsed")
 
 if uploaded_file:
     temp_file_path = os.path.join("temp", uploaded_file.name)
     os.makedirs("temp", exist_ok=True)
-    with open(temp_file_path, "wb") as f:
-        f.write(uploaded_file.getbuffer())
-
-    st.info("Procesando el archivo...")
+    with st.spinner("Processing the file... Please wait.", show_time=False):
+        time.sleep(2)
+        with open(temp_file_path, "wb") as f:
+            f.write(uploaded_file.getbuffer())
+    #st.markdown("<div class='subtitleCenter colorContent'>Processing the file...</div>", unsafe_allow_html=True)
     extracted_text = extract_text_from_pdf(temp_file_path)
-    st.subheader("Texto Extraído")
-    st.text_area("Texto del PDF", extracted_text, height=200)
+    
+    st.markdown("<div class='subtitleLeft colorContent'>Document information:</div>", unsafe_allow_html=True)
+    st.text_area("Texto del PDF", extracted_text, height=600, disabled=True, label_visibility="collapsed")
 
-    st.subheader("Información Extraída")
+    st.markdown("<div class='subtitleLeft colorContent'>Extracted information:</div>", unsafe_allow_html=True)
     extracted_results = extract_with_matcher(extracted_text)
+
+    st.text_input("Nombre", extracted_results["Nombre"], disabled=True)       
+    col1, col2 = st.columns(2)
+    with col1:
+        st.text_input("Identificación", extracted_results["CC"], disabled=True)
+    with col2:
+        st.text_input("Salario", extracted_results["Salario"], disabled=True)
+
+    col1, col2 = st.columns(2)
+    with col1:
+        st.text_input("Fecha inicio trabajo:", extracted_results["from_tiempo_laborado"], disabled=True)
+    with col2:
+        st.text_input("Fecha fin trabajo:", extracted_results["to_tiempo_laborado"], disabled=True)
+
     cedula_input = extracted_results.get("CC")
+    #for key, value in extracted_results.items():
+    #    st.write(f"**{key}:** {value}")
 
-    for key, value in extracted_results.items():
-        st.write(f"**{key}:** {value}")
-
-    if st.button("Calcular probabilidad de fraude"):
+    if st.button("Calcular probabilidad de fraude", use_container_width=True, type="primary"):
         if cedula_input:
             try:
                 cedula_input = int(cedula_input)
