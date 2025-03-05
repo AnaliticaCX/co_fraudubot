@@ -37,7 +37,7 @@ deactivate () {
 # unset irrelevant variables
 deactivate nondestructive
 
-VIRTUAL_ENV='/Users/carloscuartas/Library/CloudStorage/Box-Box/MM-TI-Análitica/03. Proyectos/Fraudubot Final/myenv'
+VIRTUAL_ENV='/Users/jeffersonestradajaramillo/Library/CloudStorage/OneDrive-CX/Escritorio/Jefferson/Pruebas Python/cambios-proyecto-ia/co_fraudubot/myenv'
 export VIRTUAL_ENV
 
 _OLD_VIRTUAL_PATH="$PATH"

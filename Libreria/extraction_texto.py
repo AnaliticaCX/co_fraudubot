@@ -1,16 +1,8 @@
-# -*- coding: utf-8 -*-
-#!pip install pdf2image
-#!apt-get install -y poppler-utils
-#!which pdftoppm
-#!pip install pytesseract
-#!sudo apt install tesseract-ocr
-#!pip install python-docx
-
 import pdf2image
 from PIL import Image
-from IPython.display import display
 import pytesseract
 from docx import Document
+
 
 def extraccion_texto(file_path):
     """
@@ -26,7 +18,7 @@ def extraccion_texto(file_path):
 
     if file_path.endswith(".pdf"):
         # Convertir PDF a imágenes y extraer texto
-        images = pdf2image.convert_from_path(file_path, poppler_path="/usr/bin")
+        images = pdf2image.convert_from_path(file_path, poppler_path="/usr/local/bin")
         for image in images:
             text += pytesseract.image_to_string(image, lang="eng")
     elif file_path.endswith(".docx"):
@@ -41,9 +33,3 @@ def extraccion_texto(file_path):
         text = pytesseract.image_to_string(Image.open(file_path), lang="eng")
 
     return text
-
-
-file_path = "Carta2.png"
-text = extraccion_texto(file_path)
-print(text)
-
