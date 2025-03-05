@@ -3,18 +3,20 @@ import re
 import spacy
 import pytesseract
 import pandas as pd
-from datetime import datetime
 from joblib import load
-from word2number import w2n
-from pdf2image import convert_from_path
-import unicodedata
 import streamlit as st
 import time
-from PIL import Image
+from libreria.chat_gpt import chat_with_gpt
+from libreria.extraction_texto import extraccion_texto
+import json
 
 # Configuración de Tesseract
-pytesseract.pytesseract.tesseract_cmd = "/opt/homebrew/bin/tesseract"
-os.environ['TESSDATA_PREFIX'] = "/opt/homebrew/share"
+#pytesseract.pytesseract.tesseract_cmd = "/opt/homebrew/bin/tesseract"
+#os.environ['TESSDATA_PREFIX'] = "/opt/homebrew/share"
+
+pytesseract.pytesseract.tesseract_cmd = "/usr/local/bin/tesseract" # EN MI CASO TENGO QUE USAR LA VARIABLE ASI
+os.environ['TESSDATA_PREFIX'] = "/usr/local/share/tessdata" # EN MI CASO TENGO QUE USAR LA VARIABLE ASI
+
 
 # Cargar el modelo spaCy para procesamiento de texto en español
 nlp = spacy.load("es_core_news_lg")
@@ -26,107 +28,48 @@ model_rl = load('./Modelos_Entrenados/Model_RL_R.pkl')
 # Cargar los datos de fraude
 fraude = pd.read_excel("./Datos/BASE_PARA_PREDICT.xlsx")
 
-# Funciones auxiliares
-def remove_accents(text):
-    """Elimina los acentos de un texto."""
-    return ''.join(
-        (c for c in unicodedata.normalize('NFD', text) if unicodedata.category(c) != 'Mn')
-    )
 
 def extract_text_from_pdf(file_path):
     """Extrae texto de un archivo PDF usando OCR (Reconocimiento Óptico de Caracteres)."""
-    pages = convert_from_path(file_path)
-    text = ""
-    for page in pages:
-        text += pytesseract.image_to_string(page, lang="spa", config="--tessdata-dir /opt/homebrew/share/tessdata") + "\n"
+    text = extraccion_texto(file_path)
     return text
 
-def extract_name(text):
-    """Extrae el nombre de una persona del texto."""
-    stop_words = {"la señora", "el señor", "señor", "señora", "la", "el", "El", "La"}
-    text = " ".join(text.split()[3:])  # Eliminar las primeras tres palabras
-    doc = nlp(text)
-    
-    for ent in doc.ents:
-        if ent.label_ == "PER":
-            cleaned_name = " ".join(word for word in ent.text.split() if word.lower() not in stop_words)
-            return cleaned_name.strip()
 
-    # Patrón para nombre con contexto como "el señor [NOMBRE]"
-    context_pattern = r"(?i)(?:el\s+señor|la\s+señora|señor(?:a)?|que)\s+([A-ZÁÉÍÓÚÑ][A-Za-zÁÉÍÓÚÑ]*(?:\s+[A-ZÁÉÍÓÚÑ][A-Za-zÁÉÍÓÚÑ]*)+)"
-    match = re.search(context_pattern, text)
-    if match:
-        candidate_name = match.group(1).strip()
-        cleaned_name = " ".join(word for word in candidate_name.split() if word.lower() not in stop_words)
-        return cleaned_name.title()
-    
-    return None
-
-def extract_cc(text):
-    """Extrae la cédula de ciudadanía del texto."""
-    text_normalized = remove_accents(text)
-    cc_match = re.search(
-        r"(?:CC|cedula(?: de ciudadania)?|cedula)(?:\s*(?:numero|num|No\.?|No:)\s*[:\s]*)?([\d\.\s]+)",
-        text_normalized, re.IGNORECASE
-    )
-    if cc_match:
-        return re.sub(r"[^\d]", "", cc_match.group(1))
-    return None
-
-def extract_salario(text):
-    """Extrae información del salario del texto, soportando tanto números como palabras."""
-    pattern = r"(?:salario|remuneración)\s*[:de]*\s*([\d.,]+|[a-zA-Z\s]+(?:\s*pesos?|\s*millon|\s*doscientos?|\s*mil)*)|[\$€]\s?[\d.,]+"
-    match = re.search(pattern, text, re.IGNORECASE)
-    if match:
-        salary_str = match.group(1) if match.group(1) else match.group(0)
-        if any(char.isalpha() for char in salary_str):
-            try:
-                salary_value = w2n.word_to_num(salary_str.replace("UN", "one").replace("MILLON", "million"))
-                return salary_value
-            except ValueError:
-                return salary_str
-        else:
-            salary_str = re.sub(r"[^\d]", "", salary_str)
-            try:
-                return int(salary_str)
-            except ValueError:
-                return salary_str
-    return None
-
-def extract_tiempo_laborado(text):
-    """Extrae las fechas de inicio y fin del periodo laboral desde el texto."""
-    year_pattern = r"\b(\d{4})\b"
-    years = re.findall(year_pattern, text)
-    current_date = datetime.now()
-    is_present = any(term in text.lower() for term in ["hasta hoy", "hoy", "actualidad", "presente", "hasta la fecha"])
-    
-    from_date, to_date = None, None
-    desde_match = re.search(r"desde\s+(\d{4})", text.lower())
-    if desde_match:
-        from_year = desde_match.group(1)
-        from_date = f"{from_year}-01-01"
-
-    if is_present:
-        to_date = current_date.strftime('%Y-%m-%d')
-    elif len(years) > 1:
-        to_date = f"{years[1]}-12-31"
-
-    if not desde_match and years:
-        from_date = f"{years[0]}-01-01"
-
-    return from_date, to_date
-
-def extract_with_matcher(text):
+def extract_with_matcher(text): 
     """Extrae toda la información relevante del texto."""
-    results = {
-        "Nombre": extract_name(text),
-        "CC": extract_cc(text),
-        "Salario": extract_salario(text),
-        "from_tiempo_laborado": None,
-        "to_tiempo_laborado": None
-    }
-    results["from_tiempo_laborado"], results["to_tiempo_laborado"] = extract_tiempo_laborado(text)
+
+    peticion = """
+
+    Saca los datos principales de la persona de la siguiente carta laboral:
+
+        nombre (ordenado por nombre, segundo nombre, apellido y segundo apellido),
+        cedula (sin puntos ni comas) ponle de titulo CC,
+        de_donde_es_la_cedula (ciudad de origen de donde salió el documento),
+        tipo_de_contrato,
+        cargo,
+        nombre_de_la_empresa,
+        nit_de_la_empresa,
+        salario (sin puntos ni comas decimales, solo pon  valores numericos),
+        bonificacion (sin puntos ni comas decimales, solo pon  valores numericos),
+        fecha_inicio_labor ,
+        fecha_fin_labor (si no tiene fecha fin, pon "actualidad" para saber que actualmente esta laborando),
+        fecha_de_expedicion_carta
+
+    quiero que las fechas queden en formato dd/mm/yyyy
+
+    entrega los resultados en json
+
+    """
+    text = peticion + text
+    results = chat_with_gpt(text)
+    try:
+        results = json.loads(results)
+    except json.JSONDecodeError:
+        print("❌ Error: ChatGPT devolvió un JSON no válido. Verifica la respuesta.")
+        results = {"error": "Respuesta de ChatGPT no válida"}
+
     return results
+
 
 def calcular_probabilidad(fraude_data, cedula, model_rf, model_rl):
     """Calcula la probabilidad de fraude usando los modelos de Machine Learning."""
@@ -149,7 +92,6 @@ def calcular_probabilidad(fraude_data, cedula, model_rf, model_rl):
     prob_ensamble = (peso_rf * prob_rf) + (peso_lr * prob_lr)
 
     return prob_ensamble[0], None
-
 
 
 # Interfaz de Streamlit
@@ -233,23 +175,40 @@ if uploaded_file:
     extracted_text = extract_text_from_pdf(temp_file_path)
     
     st.markdown("<div class='subtitleLeft colorContent'>Document information:</div>", unsafe_allow_html=True)
-    st.text_area("Texto del PDF", extracted_text, height=600, disabled=True, label_visibility="collapsed")
+    st.text_area("Texto del PDF", extracted_text, height=600, disabled=True)#, label_visibility="collapsed")
 
     st.markdown("<div class='subtitleLeft colorContent'>Extracted information:</div>", unsafe_allow_html=True)
     extracted_results = extract_with_matcher(extracted_text)
 
-    st.text_input("Nombre", extracted_results["Nombre"], disabled=True)       
-    col1, col2 = st.columns(2)
+    st.text_input("Nombre", extracted_results["nombre"], disabled=True)       
+    col1, col2, col3 = st.columns(3)
     with col1:
         st.text_input("Identificación", extracted_results["CC"], disabled=True)
     with col2:
-        st.text_input("Salario", extracted_results["Salario"], disabled=True)
+        st.text_input("Salario", extracted_results["salario"], disabled=True)
+    with col3:
+        st.text_input("Bonificación", extracted_results["bonificacion"], disabled=True)
 
     col1, col2 = st.columns(2)
     with col1:
-        st.text_input("Fecha inicio trabajo:", extracted_results["from_tiempo_laborado"], disabled=True)
+        st.text_input("Fecha inicio trabajo:", extracted_results["fecha_inicio_labor"], disabled=True)
     with col2:
-        st.text_input("Fecha fin trabajo:", extracted_results["to_tiempo_laborado"], disabled=True)
+        st.text_input("Fecha fin trabajo:", extracted_results["fecha_fin_labor"], disabled=True)
+    col1, col2 = st.columns(2)
+    with col1:
+        st.text_input("Tipo de contrato", extracted_results["tipo_de_contrato"], disabled=True)
+    with col2:
+        st.text_input("Cargo", extracted_results["cargo"], disabled=True)
+    col1, col2 = st.columns(2)
+    with col1:
+        st.text_input("Nombre de la empresa", extracted_results["nombre_de_la_empresa"], disabled=True)
+    with col2:
+        st.text_input("NIT de la empresa", extracted_results["nit_de_la_empresa"], disabled=True)
+    col1, col2 = st.columns(2)
+    with col1:
+        st.text_input("Ciudad de origen de la cédula", extracted_results["de_donde_es_la_cedula"], disabled=True)
+    with col2:
+        st.text_input("Fecha de expedición de la carta", extracted_results["fecha_de_expedicion_carta"], disabled=True)
 
     cedula_input = extracted_results.get("CC")
     #for key, value in extracted_results.items():
