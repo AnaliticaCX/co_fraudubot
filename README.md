@@ -3,3 +3,7 @@
 2. Descargar diccionario spacy---> python -m spacy download es_core_news_lg  ESTO NO ES NECESARIO YA QUE USAMOS CHAT GPT
 3. Para desplegar la aplicacion en local ejecutar en la terminal: streamlit run main.py
 
+/usr/bin/python3 -m streamlit run main.py
+brew install libmagic
+pip3 install plotly
+pip3 install reportlab
