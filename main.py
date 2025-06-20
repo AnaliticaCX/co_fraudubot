@@ -1,4 +1,7 @@
 import streamlit as st
+import os
+import pandas as pd
+from PIL import Image
 # Primero, configurar la página
 st.set_page_config(
     page_title="Fraudubot - Análisis de Documentos",
@@ -6,43 +9,119 @@ st.set_page_config(
     layout="wide"
 )
 
-# Luego, importar el resto de las dependencias
-import os
-import json
-import pandas as pd
-from joblib import load
-from libreria.extraction_texto import extraccion_texto
-from libreria.chat_gpt import chat_with_gpt
-import cv2
-import numpy as np
-from PIL import Image
-import pdf2image
-import tempfile
-from datetime import datetime
-import PyPDF2
-import piexif
-import exifread
-import magic  # para detectar el tipo de archivo
-from reportlab.lib import colors
-from reportlab.lib.pagesizes import letter
-from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle
-from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
-from reportlab.lib.units import inch
-import io
-from libreria.modelos_ia import ModeloIA
-from libreria.modelo_local import ModeloDeepSeek
+# Importar servicios modularizados
+from services.modelos import obtener_modelo_ia
+from services.extraccion import extraer_texto, extraer_datos_carta_laboral, extraer_datos_extracto_bancario, extraer_datos_colilla_pago
+from services.comparacion import comparar_documentos
+from services.visual import analizar_documento_visual
+from services.metadatos import extraer_metadatos
+from services.reporte import generar_pdf_report
+from services.utilidades import formatear_valor_monetario
+from services.consulta_rues import consultar_empresa_por_nit
+
+# Personalización de colores de fondo y texto
+st.markdown("""
+    <style>
+    /* Fondo principal */
+    .stApp {
+        background-color: #fcfcfc !important;
+        color: #222 !important;
+    }
+    /* Barra lateral: fondo y texto */
+    section[data-testid="stSidebar"] {
+        background-color: rgb(5, 27, 95) !important;
+        color: #fff !important;
+    }
+    section[data-testid="stSidebar"] * {
+        background-color: transparent !important;
+        color: #fff !important;
+        border-color: #fff !important;
+    }
+    section[data-testid="stSidebar"] .st-bw {
+        background-color: rgb(5, 27, 95) !important;
+    }
+    section[data-testid="stSidebar"] .st-af {
+        background-color: rgb(5, 27, 95) !important;
+    }
+    section[data-testid="stSidebar"] .st-c6 {
+        background-color: rgb(5, 27, 95) !important;
+    }
+    section[data-testid="stSidebar"] .st-emotion-cache-1v0mbdj,
+    section[data-testid="stSidebar"] .st-emotion-cache-1cpxqw2,
+    section[data-testid="stSidebar"] .st-emotion-cache-1offfwp,
+    section[data-testid="stSidebar"] label {
+        color: #fff !important;
+    }
+    section[data-testid="stSidebar"] input,
+    section[data-testid="stSidebar"] textarea,
+    section[data-testid="stSidebar"] select {
+        background-color: #fff !important;
+        color: #051b5f !important;
+        border-radius: 5px !important;
+    }
+    section[data-testid="stSidebar"] .st-emotion-cache-1v0mbdj {
+        color: #fff !important;
+    }
+    /* Barra superior (header) */
+    header[data-testid="stHeader"] {
+        background-color: rgb(5, 27, 95) !important;
+    }
+    header[data-testid="stHeader"] > div {
+        background-color: rgb(5, 27, 95) !important;
+    }
+    header[data-testid="stHeader"] .st-emotion-cache-1avcm0n,
+    header[data-testid="stHeader"] .st-emotion-cache-1dp5vir,
+    header[data-testid="stHeader"] .st-emotion-cache-18ni7ap,
+    header[data-testid="stHeader"] .st-emotion-cache-6qob1r,
+    header[data-testid="stHeader"] * {
+        background-color: rgb(5, 27, 95) !important;
+        color: #fff !important;
+    }
+    /* Tablas de Streamlit */
+    .stTable, .tabla-personalizada {
+        background-color: #f0f4fa !important;
+        color: #222 !important;
+        border-radius: 10px !important;
+        border: 1px solid #051b5f !important;
+        margin-bottom: 2rem !important;
+        font-family: 'Inter', 'system-ui', 'sans-serif' !important;
+        font-size: 1rem !important;
+    }
+    .stTable th, .tabla-personalizada th {
+        background-color: #051b5f !important;
+        color: #fff !important;
+        font-weight: bold !important;
+        font-family: 'Inter', 'system-ui', 'sans-serif' !important;
+    }
+    .stTable td, .tabla-personalizada td {
+        background-color: #f8fafc !important;
+        color: #222 !important;
+        font-family: 'Inter', 'system-ui', 'sans-serif' !important;
+    }
+    /* Texto principal */
+    .stApp {
+        color: #222 !important;
+    }
+    /* Porcentaje Promedio destacado */
+    .porcentaje-promedio {
+        color: rgb(5, 27, 95) !important;
+        font-weight: bold;
+        font-size: 1.2rem;
+    }
+    /* Resumen de comparación y explicación detallada */
+    .resumen-comparacion {
+        font-family: 'Inter', 'system-ui', 'sans-serif';
+        font-size: 1rem;
+        color: #222;
+        max-width: 100%;
+        word-break: break-word;
+        white-space: pre-line;
+        margin-bottom: 1rem;
+    }
+    </style>
+""", unsafe_allow_html=True)
 
 # --- MODELOS Y BASE DE DATOS ---
-model_rf = load('./Modelos_Entrenados/Model_RF.pkl')
-model_rl = load('./Modelos_Entrenados/Model_RL_R.pkl')
-fraude = pd.read_excel("./Datos/BASE_PARA_PREDICT.xlsx")
-
-# --- FUNCIONES AUXILIARES ---
-
-# Configuración de API keys
-OPENAI_API_KEY = "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"
-GEMINI_API_KEY = "AIzaSyAleWdBrBo9G0X9X3HRT2YAxAz2n75-56Y"
-
 # Selección del modelo
 st.sidebar.title("⚙️ Configuración")
 modelo_seleccionado = st.sidebar.radio(
@@ -50,642 +129,14 @@ modelo_seleccionado = st.sidebar.radio(
     ["OpenAI", "Gemini", "DeepSeek Local"],
     index=0
 )
-
-# Inicializar el modelo seleccionado
-if modelo_seleccionado == "OpenAI":
-    modelo = ModeloIA("openai", OPENAI_API_KEY)
-elif modelo_seleccionado == "Gemini":
-    modelo = ModeloIA("gemini", GEMINI_API_KEY)
-else:  # DeepSeek Local
-    modelo = ModeloDeepSeek()
+modelo = obtener_modelo_ia(modelo_seleccionado)
 
 # Mostrar el modelo seleccionado
 st.sidebar.info(f"Modelo actual: {modelo_seleccionado}")
 
-def extract_text(file_path):
-    return extraccion_texto(file_path)
-
-def clasificar_documento(texto):
-    return modelo.clasificar_documento(texto)
-
-def extract_with_matcher(text):
-    return modelo.extraer_datos_carta_laboral(text)
-
-def calcular_promedio_coincidencias(resultados_colillas):
-    """
-    Calcula el promedio de coincidencias entre las colillas de pago.
-    
-    Args:
-        resultados_colillas (list): Lista de resultados de comparación de colillas
-        
-    Returns:
-        dict: Diccionario con el promedio y detalles
-    """
-    if not resultados_colillas:
-        return {
-            "promedio": "0%",
-            "explicacion": "No hay colillas para comparar",
-            "detalles": []
-        }
-    
-    # Extraer porcentajes y convertirlos a números
-    porcentajes = []
-    detalles = []
-    
-    for resultado in resultados_colillas:
-        if "error" in resultado:
-            continue
-            
-        try:
-            # Extraer el número del porcentaje (eliminar el símbolo %)
-            porcentaje = float(resultado["porcentaje"].strip('%'))
-            porcentajes.append(porcentaje)
-            detalles.append({
-                "porcentaje": resultado["porcentaje"],
-                "explicacion": resultado["explicacion"],
-                "no_coincide": resultado["no_coincide"]
-            })
-        except (ValueError, KeyError):
-            continue
-    
-    if not porcentajes:
-        return {
-            "promedio": "0%",
-            "explicacion": "No se pudieron procesar los porcentajes",
-            "detalles": []
-        }
-    
-    # Calcular promedio
-    promedio = sum(porcentajes) / len(porcentajes)
-    
-    return {
-        "promedio": f"{promedio:.2f}%",
-        "explicacion": f"Promedio de coincidencia entre {len(porcentajes)} colillas de pago",
-        "detalles": detalles
-    }
-# Datos de la empresa
-def formatear_valor_monetario(valor):
-    """
-    Formatea un valor monetario, manejando diferentes tipos de entrada.
-    """
-    try:
-        # Si es string, intentar convertir a float primero
-        if isinstance(valor, str):
-            valor = float(valor)
-        # Convertir a entero
-        valor = int(valor)
-        return f"${valor:,}"
-    except (ValueError, TypeError):
-        return "$0"
-
-def compracion_documentos(texto1, texto2):
-    """
-    Compara dos documentos usando el modelo seleccionado.
-    
-    Args:
-        texto1 (str): Texto del primer documento
-        texto2 (str): Texto del segundo documento
-    """
-    return modelo.comparar_documentos(texto1, texto2)
-
-def calcular_probabilidad(fraude_data, cedula, model_rf, model_rl):
-    caso = fraude_data[fraude_data['CEDULA'] == cedula]
-    if caso.empty:
-        return None, "Cédula no encontrada en base de datos."
-
-    caso_preparado = caso.drop(['CEDULA', 'N'], axis=1, errors='ignore')
-    expected_columns = model_rf.feature_names_in_
-    caso_preparado = caso_preparado[expected_columns]
-
-    prob_rf = 1 - model_rf.predict_proba(caso_preparado)[:, 1]
-    prob_lr = 1 - model_rl.predict_proba(caso_preparado)[:, 1]
-    prob_ensamble = (0.4 * prob_rf) + (0.6 * prob_lr)
-
-    return prob_ensamble[0], None
-
-def convertir_pdf_a_imagen(pdf_path):
-    """
-    Convierte un PDF a una lista de imágenes.
-    
-    Args:
-        pdf_path (str): Ruta al archivo PDF
-        
-    Returns:
-        list: Lista de rutas a las imágenes temporales
-    """
-    try:
-        # Crear directorio temporal si no existe
-        temp_dir = tempfile.mkdtemp()
-        
-        # Convertir PDF a imágenes
-        images = pdf2image.convert_from_path(pdf_path)
-        
-        # Guardar cada página como imagen temporal
-        image_paths = []
-        for i, image in enumerate(images):
-            image_path = os.path.join(temp_dir, f'page_{i}.png')
-            image.save(image_path, 'PNG')
-            image_paths.append(image_path)
-            
-        return image_paths
-    except Exception as e:
-        return []
-
-def analizar_documento_visual(archivo_path):
-    """
-    Analiza elementos visuales de un documento (PDF o imagen).
-    
-    Args:
-        archivo_path (str): Ruta al archivo (PDF o imagen)
-        
-    Returns:
-        dict: Diccionario con los resultados del análisis
-    """
-    try:
-        # Determinar si es PDF o imagen
-        es_pdf = archivo_path.lower().endswith('.pdf')
-        
-        if es_pdf:
-            # Convertir PDF a imágenes
-            image_paths = convertir_pdf_a_imagen(archivo_path)
-            if not image_paths:
-                return {"error": "No se pudo convertir el PDF a imágenes"}
-            
-            # Analizar cada página
-            resultados_por_pagina = []
-            for img_path in image_paths:
-                resultado = analizar_imagen(img_path)
-                resultados_por_pagina.append(resultado)
-                
-            # Combinar resultados
-            resultado_final = combinar_resultados(resultados_por_pagina)
-            
-            # Limpiar archivos temporales
-            for img_path in image_paths:
-                try:
-                    os.remove(img_path)
-                except:
-                    pass
-                    
-            return resultado_final
-        else:
-            # Si es imagen, analizar directamente
-            return analizar_imagen(archivo_path)
-            
-    except Exception as e:
-        return {"error": f"Error en el análisis visual: {str(e)}"}
-
-def analizar_imagen(imagen_path):
-    """
-    Analiza una imagen individual.
-    
-    Args:
-        imagen_path (str): Ruta a la imagen
-        
-    Returns:
-        dict: Resultados del análisis
-    """
-    try:
-        # Cargar imagen
-        img = cv2.imread(imagen_path)
-        if img is None:
-            return {"error": "No se pudo cargar la imagen"}
-        
-        # Convertir a escala de grises
-        gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-        
-        # 1. Detección de sellos
-        def detectar_sellos(imagen):
-            # Aplicar umbral adaptativo
-            thresh = cv2.adaptiveThreshold(
-                gray, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, 
-                cv2.THRESH_BINARY_INV, 11, 2
-            )
-
-            # Encontrar contornos
-            contours, _ = cv2.findContours(
-                thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE
-            )
-
-            # Filtrar contornos por área (para detectar sellos)
-            sellos = []
-            for cnt in contours:
-                area = cv2.contourArea(cnt)
-                if 1000 < area < 10000:  # Ajustar estos valores según necesidad
-                    sellos.append(cnt)
-
-            return len(sellos)
-
-        # 2. Detección de firmas
-        def detectar_firmas(imagen):
-            # Aplicar umbral para detectar trazos oscuros
-            _, binary = cv2.threshold(gray, 127, 255, cv2.THRESH_BINARY_INV)
-            
-            # Encontrar contornos
-            contours, _ = cv2.findContours(
-                binary, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE
-            )
-            
-            # Filtrar contornos que podrían ser firmas
-            firmas = []
-            for cnt in contours:
-                x, y, w, h = cv2.boundingRect(cnt)
-                if w > 50 and h > 20:  # Ajustar según necesidad
-                    firmas.append((x, y, w, h))
-            
-            return firmas
-
-        # 3. Análisis de calidad
-        def analizar_calidad(imagen):
-            # Calcular la varianza de Laplaciano para medir el enfoque
-            laplacian = cv2.Laplacian(gray, cv2.CV_64F)
-            sharpness = np.var(laplacian)
-            
-            # Calcular el contraste
-            contrast = np.std(gray)
-            
-            return {
-                "nitidez": sharpness,
-                "contraste": contrast
-            }
-
-        # 4. Detección de marcas de agua
-        def detectar_marcas_agua(imagen):
-            # Convertir a escala de grises si no lo está
-            if len(imagen.shape) == 3:
-                gray = cv2.cvtColor(imagen, cv2.COLOR_BGR2GRAY)
-            else:
-                gray = imagen
-                
-            # Aplicar umbral adaptativo
-            thresh = cv2.adaptiveThreshold(
-                gray, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
-                cv2.THRESH_BINARY_INV, 11, 2
-            )
-            
-            # Buscar patrones que podrían ser marcas de agua
-            contours, _ = cv2.findContours(
-                thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE
-            )
-            
-            marcas_agua = []
-            for cnt in contours:
-                area = cv2.contourArea(cnt)
-                if 500 < area < 5000:  # Ajustar según necesidad
-                    marcas_agua.append(cnt)
-            
-            return len(marcas_agua)
-
-        # Realizar todos los análisis
-        resultados = {
-            "numero_sellos": detectar_sellos(img),
-            "firmas_detectadas": detectar_firmas(img),
-            "calidad": analizar_calidad(img),
-            "marcas_agua": detectar_marcas_agua(img),
-            "sospechas": []
-        }
-
-        # Evaluar resultados y generar sospechas
-        if resultados["numero_sellos"] == 0:
-            resultados["sospechas"].append("No se detectaron sellos en el documento")
-        
-        if len(resultados["firmas_detectadas"]) == 0:
-            resultados["sospechas"].append("No se detectaron firmas en el documento")
-            
-        if resultados["calidad"]["nitidez"] < 100:  # Ajustar umbral según necesidad
-            resultados["sospechas"].append("La calidad de la imagen es baja")
-            
-        if resultados["marcas_agua"] == 0:
-            resultados["sospechas"].append("No se detectaron marcas de agua")
-
-        return resultados
-
-    except Exception as e:
-        return {"error": f"Error en el análisis visual: {str(e)}"}
-
-def combinar_resultados(resultados_por_pagina):
-    """
-    Combina los resultados de múltiples páginas.
-    
-    Args:
-        resultados_por_pagina (list): Lista de resultados por página
-        
-    Returns:
-        dict: Resultados combinados
-    """
-    resultado_final = {
-        "numero_sellos": 0,
-        "firmas_detectadas": [],
-        "calidad": {
-            "nitidez": 0,
-            "contraste": 0
-        },
-        "marcas_agua": 0,
-        "sospechas": []
-    }
-    
-    # Combinar resultados
-    for resultado in resultados_por_pagina:
-        if "error" in resultado:
-            continue
-            
-        resultado_final["numero_sellos"] += resultado["numero_sellos"]
-        resultado_final["firmas_detectadas"].extend(resultado["firmas_detectadas"])
-        resultado_final["calidad"]["nitidez"] = max(
-            resultado_final["calidad"]["nitidez"],
-            resultado["calidad"]["nitidez"]
-        )
-        resultado_final["calidad"]["contraste"] = max(
-            resultado_final["calidad"]["contraste"],
-            resultado["calidad"]["contraste"]
-        )
-        resultado_final["marcas_agua"] += resultado["marcas_agua"]
-        resultado_final["sospechas"].extend(resultado["sospechas"])
-    
-    return resultado_final
-
-def extraer_metadatos(archivo_path):
-    """
-    Extrae metadatos de un archivo (PDF o imagen).
-    
-    Args:
-        archivo_path (str): Ruta al archivo
-        
-    Returns:
-        dict: Diccionario con los metadatos extraídos
-    """
-    try:
-        # Obtener información básica del archivo
-        stats = os.stat(archivo_path)
-        metadatos = {
-            "nombre_archivo": os.path.basename(archivo_path),
-            "tamaño_bytes": stats.st_size,
-            "fecha_creacion": datetime.fromtimestamp(stats.st_ctime).strftime('%Y-%m-%d %H:%M:%S'),
-            "fecha_modificacion": datetime.fromtimestamp(stats.st_mtime).strftime('%Y-%m-%d %H:%M:%S'),
-            "tipo_archivo": magic.from_file(archivo_path),
-            "sospechas": []
-        }
-
-        # Detectar tipo de archivo
-        es_pdf = archivo_path.lower().endswith('.pdf')
-        es_imagen = archivo_path.lower().endswith(('.jpg', '.jpeg', '.png', '.tiff', '.bmp'))
-
-        if es_pdf:
-            metadatos_pdf = extraer_metadatos_pdf(archivo_path)
-            metadatos.update(metadatos_pdf)
-        elif es_imagen:
-            metadatos_imagen = extraer_metadatos_imagen(archivo_path)
-            metadatos.update(metadatos_imagen)
-
-        # Análisis de sospechas
-        analizar_sospechas_metadatos(metadatos)
-
-        return metadatos
-
-    except Exception as e:
-        return {"error": f"Error al extraer metadatos: {str(e)}"}
-
-def extraer_metadatos_pdf(pdf_path):
-    """
-    Extrae metadatos específicos de un archivo PDF.
-    """
-    try:
-        with open(pdf_path, 'rb') as file:
-            pdf = PyPDF2.PdfReader(file)
-            info = pdf.metadata
-
-            metadatos = {
-                "tipo_documento": "PDF",
-                "numero_paginas": len(pdf.pages),
-                "version_pdf": pdf.pdf_header,
-                "metadatos_pdf": {
-                    "autor": info.get('/Author', 'No disponible'),
-                    "creador": info.get('/Creator', 'No disponible'),
-                    "productor": info.get('/Producer', 'No disponible'),
-                    "fecha_creacion": info.get('/CreationDate', 'No disponible'),
-                    "fecha_modificacion": info.get('/ModDate', 'No disponible'),
-                    "titulo": info.get('/Title', 'No disponible'),
-                    "asunto": info.get('/Subject', 'No disponible'),
-                    "palabras_clave": info.get('/Keywords', 'No disponible')
-                }
-            }
-            return metadatos
-    except Exception as e:
-        return {"error_pdf": f"Error al extraer metadatos PDF: {str(e)}"}
-
-def extraer_metadatos_imagen(imagen_path):
-    """
-    Extrae metadatos específicos de una imagen.
-    """
-    try:
-        metadatos = {
-            "tipo_documento": "Imagen",
-            "metadatos_imagen": {}
-        }
-
-        # Extraer EXIF data
-        try:
-            exif_dict = piexif.load(imagen_path)
-            if exif_dict:
-                metadatos["metadatos_imagen"]["exif"] = {
-                    "fecha_creacion": exif_dict.get('0th', {}).get(piexif.ImageIFD.DateTime, 'No disponible'),
-                    "software": exif_dict.get('0th', {}).get(piexif.ImageIFD.Software, 'No disponible'),
-                    "equipo": exif_dict.get('0th', {}).get(piexif.ImageIFD.Make, 'No disponible'),
-                    "modelo_camara": exif_dict.get('0th', {}).get(piexif.ImageIFD.Model, 'No disponible')
-                }
-        except:
-            pass
-
-        # Extraer información adicional con exifread
-        try:
-            with open(imagen_path, 'rb') as f:
-                tags = exifread.process_file(f)
-                if tags:
-                    metadatos["metadatos_imagen"]["exifread"] = {
-                        "fecha_creacion": str(tags.get('EXIF DateTimeOriginal', 'No disponible')),
-                        "software": str(tags.get('Software', 'No disponible')),
-                        "equipo": str(tags.get('Image Make', 'No disponible')),
-                        "modelo_camara": str(tags.get('Image Model', 'No disponible'))
-                    }
-        except:
-            pass
-
-        # Obtener información básica de la imagen
-        try:
-            with Image.open(imagen_path) as img:
-                metadatos["metadatos_imagen"]["basico"] = {
-                    "formato": img.format,
-                    "modo": img.mode,
-                    "tamaño": img.size,
-                    "dpi": img.info.get('dpi', 'No disponible')
-                }
-        except:
-            pass
-
-        return metadatos
-    except Exception as e:
-        return {"error_imagen": f"Error al extraer metadatos de imagen: {str(e)}"}
-
-def analizar_sospechas_metadatos(metadatos):
-    """
-    Analiza los metadatos en busca de posibles fraudes.
-    """
-    sospechas = []
-
-    # Verificar fechas
-    fecha_creacion = metadatos.get("fecha_creacion")
-    fecha_modificacion = metadatos.get("fecha_modificacion")
-    
-    if fecha_creacion and fecha_modificacion:
-        fecha_creacion = datetime.strptime(fecha_creacion, '%Y-%m-%d %H:%M:%S')
-        fecha_modificacion = datetime.strptime(fecha_modificacion, '%Y-%m-%d %H:%M:%S')
-        
-        if fecha_modificacion < fecha_creacion:
-            sospechas.append("La fecha de modificación es anterior a la fecha de creación")
-
-    # Verificar software de creación
-    if "metadatos_pdf" in metadatos:
-        creador = metadatos["metadatos_pdf"]["creador"]
-        if "Adobe" in creador and "Photoshop" in creador:
-            sospechas.append("El documento PDF fue creado con Photoshop, lo cual es inusual")
-    
-    if "metadatos_imagen" in metadatos:
-        if "exif" in metadatos["metadatos_imagen"]:
-            software = metadatos["metadatos_imagen"]["exif"].get("software", "")
-            if "Photoshop" in software:
-                sospechas.append("La imagen fue editada con Photoshop")
-
-    # Verificar si el archivo es muy reciente
-    fecha_actual = datetime.now()
-    if fecha_creacion:
-        diferencia_dias = (fecha_actual - fecha_creacion).days
-        if diferencia_dias < 1:
-            sospechas.append("El documento fue creado hace menos de 24 horas")
-
-    metadatos["sospechas"] = sospechas
-
-def generar_pdf_report(documentos_clasificados, resultados_comparaciones):
-    """
-    Genera un PDF con el reporte completo del análisis usando los datos ya procesados.
-    """
-    # Crear buffer para el PDF
-    buffer = io.BytesIO()
-    
-    # Crear el documento
-    doc = SimpleDocTemplate(
-        buffer,
-        pagesize=letter,
-        rightMargin=72,
-        leftMargin=72,
-        topMargin=72,
-        bottomMargin=72
-    )
-    
-    # Estilos
-    styles = getSampleStyleSheet()
-    title_style = ParagraphStyle(
-        'CustomTitle',
-        parent=styles['Heading1'],
-        fontSize=24,
-        spaceAfter=30
-    )
-    heading_style = ParagraphStyle(
-        'CustomHeading',
-        parent=styles['Heading2'],
-        fontSize=16,
-        spaceAfter=12
-    )
-    
-    # Lista de elementos del PDF
-    elements = []
-    
-    # Título
-    elements.append(Paragraph("Reporte de Análisis de Documentos", title_style))
-    elements.append(Paragraph(f"Fecha de generación: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}", styles["Normal"]))
-    elements.append(Spacer(1, 20))
-    
-    # Resumen de documentos analizados
-    elements.append(Paragraph("Resumen de Documentos Analizados", heading_style))
-    resumen_docs = [
-        ["Tipo de Documento", "Cantidad"],
-        ["Carta Laboral", str(len(documentos_clasificados["carta laboral"]))],
-        ["Colillas de Pago", str(len(documentos_clasificados["colilla de pago"]))],
-        ["Extractos Bancarios", str(len(documentos_clasificados["extracto bancario"]))]
-    ]
-    
-    t = Table(resumen_docs, colWidths=[3*inch, 3*inch])
-    t.setStyle(TableStyle([
-        ('GRID', (0, 0), (-1, -1), 1, colors.black),
-        ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
-        ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
-        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
-        ('FONTNAME', (0, 0), (-1, -1), 'Helvetica-Bold'),
-        ('FONTSIZE', (0, 0), (-1, -1), 12),
-    ]))
-    elements.append(t)
-    elements.append(Spacer(1, 20))
-    
-    # Resultados de comparaciones
-    if resultados_comparaciones:
-        elements.append(Paragraph("Resultados de Comparaciones", heading_style))
-        
-        for comparacion in resultados_comparaciones:
-            resultado = comparacion["resultado"]
-            elements.append(Paragraph(f"Comparación: {comparacion['tipo']}", styles["Heading3"]))
-            
-            # Información básica de la comparación
-            info_comparacion = [
-                ["Porcentaje de Coincidencia:", resultado.get("porcentaje", "N/A")],
-                ["Explicación:", resultado.get("explicacion", "N/A")]
-            ]
-            
-            t = Table(info_comparacion, colWidths=[2*inch, 4*inch])
-            t.setStyle(TableStyle([
-                ('GRID', (0, 0), (-1, -1), 1, colors.black),
-                ('BACKGROUND', (0, 0), (0, -1), colors.grey),
-                ('TEXTCOLOR', (0, 0), (0, -1), colors.whitesmoke),
-                ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
-                ('FONTNAME', (0, 0), (-1, -1), 'Helvetica-Bold'),
-                ('FONTSIZE', (0, 0), (-1, -1), 12),
-            ]))
-            elements.append(t)
-            
-            # Discrepancias encontradas
-            if "no_coincide" in resultado:
-                elements.append(Paragraph("Discrepancias Encontradas:", styles["Heading4"]))
-                for campo, valores in resultado["no_coincide"].items():
-                    elementos_discrepancia = [
-                        ["Campo", campo.title()],
-                        ["Valor 1", str(valores.get('colilla_pago', valores.get('extracto_bancario', 'N/A')))],
-                        ["Valor 2", str(valores.get('carta_laboral', valores.get('colilla_pago', 'N/A')))]
-                    ]
-                    
-                    t = Table(elementos_discrepancia, colWidths=[2*inch, 4*inch])
-                    t.setStyle(TableStyle([
-                        ('GRID', (0, 0), (-1, -1), 1, colors.black),
-                        ('BACKGROUND', (0, 0), (0, -1), colors.grey),
-                        ('TEXTCOLOR', (0, 0), (0, -1), colors.whitesmoke),
-                        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
-                        ('FONTNAME', (0, 0), (-1, -1), 'Helvetica-Bold'),
-                        ('FONTSIZE', (0, 0), (-1, -1), 12),
-                    ]))
-                    elements.append(t)
-            
-            elements.append(Spacer(1, 20))
-    
-    # Construir el PDF
-    doc.build(elements)
-    
-    # Obtener el valor del buffer
-    pdf = buffer.getvalue()
-    buffer.close()
-    
-    return pdf
-
 # --- INTERFAZ STREAMLIT ---
-
-# Configuración inicial de la página
-
+# TODO: Mantener solo la lógica de la interfaz y orquestación aquí
+# El resto de la lógica debe estar en los módulos de services/
 
 # Estilo personalizado
 st.markdown("""
@@ -713,9 +164,11 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# Título principal
-st.title("🔍 Fraudubot - Análisis de Documentos")
-st.markdown("---")
+# Mostrar logo centrado en la parte superior
+logo = Image.open("img/logo_fraudubot.png")
+col1, col2, col3 = st.columns([1, 2, 1])
+with col2:
+    st.image(logo, use_container_width=True)
 
 # Sección de carga de archivos
 with st.container():
@@ -749,17 +202,27 @@ if uploaded_files:
             f.write(archivo.getbuffer())
 
         # Análisis de texto y visual
-        texto = extract_text(path)
-        tipo = clasificar_documento(texto)
+        texto = extraer_texto(path)
+        tipo = modelo.clasificar_documento(texto)
         analisis_visual = analizar_documento_visual(path)
         metadatos = extraer_metadatos(path)
+        
+        # Extraer datos según el tipo de documento
+        datos_documento = {}
+        if tipo == "extracto bancario":
+            datos_documento = extraer_datos_extracto_bancario(modelo, texto)
+            print("Datos del extracto bancario:", datos_documento)
+        elif tipo == "colilla de pago":
+            datos_documento = extraer_datos_colilla_pago(modelo, texto)
+            print("Datos de la colilla de pago:", datos_documento)
         
         documentos_clasificados[tipo].append({
             "nombre_archivo": archivo.name,
             "texto": texto,
             "path": path,
             "analisis_visual": analisis_visual,
-            "metadatos": metadatos
+            "metadatos": metadatos,
+            "datos_documento": datos_documento  # <-- aquí se guardan los datos extraídos
         })
 
     # Limpiar barra de progreso
@@ -767,51 +230,57 @@ if uploaded_files:
     status_text.empty()
 
     # Mostrar resultados por tipo de documento
+    st.markdown("## 📊 Resumen de Documentos Analizados")
+    
+    # Crear DataFrame para la tabla resumen
+    resumen_data = []
+    
     for tipo, docs in documentos_clasificados.items():
         if docs:
-            st.markdown(f"## 📄 {tipo.upper()}")
-            
-            # Crear columnas para cada documento
-            cols = st.columns(len(docs))
-            
-            for i, (doc, col) in enumerate(zip(docs, cols)):
-                with col:
-                    st.markdown(f"### Documento {i+1}")
+            for doc in docs:
+                analisis = doc["analisis_visual"]
+                if "error" not in analisis:
+                    # Determinar calidad
+                    nitidez = analisis["calidad"]["nitidez"]
+                    if nitidez > 200:
+                        calidad = "Alta"
+                    elif nitidez > 100:
+                        calidad = "Media"
+                    elif nitidez > 50:
+                        calidad = "Baja"
+                    else:
+                        calidad = "Mala"
                     
-                    # Información básica
-                    with st.expander("📋 Información Básica", expanded=True):
-                        st.write(f"**Nombre:** {doc['nombre_archivo']}")
+                    resumen_data.append({
+                        "Tipo de Documento": tipo.upper(),
+                        "Nombre": doc["nombre_archivo"],
+                        "Sellos": "Sí" if analisis["numero_sellos"] > 0 else "No",
+                        "Marcas de Agua": "Sí" if analisis["marcas_agua"] > 0 else "No",
+                        "Firmas": "Sí" if len(analisis["firmas_detectadas"]) > 0 else "No",
+                        "Calidad": calidad
+                    })
+    
+    if resumen_data:
+        df_resumen = pd.DataFrame(resumen_data)
+        st.table(df_resumen)
+        
+        # Mostrar alertas de cada documento
+        st.markdown("## ⚠️ Alertas Detectadas")
+        for tipo, docs in documentos_clasificados.items():
+            if docs:
+                for doc in docs:
+                    analisis = doc["analisis_visual"]
+                    if "error" not in analisis and analisis["sospechas"]:
+                        st.markdown(f"""
+                        <div style="background-color: #ffebee; padding: 15px; border-radius: 5px; margin: 10px 0;">
+                            <h4 style="color: #c62828; margin: 0;">{doc['nombre_archivo']}</h4>
+                            <ul style="margin: 10px 0;">
+                        """, unsafe_allow_html=True)
                         
-                        # Mostrar metadatos
-                        if "metadatos" in doc:
-                            metadatos = doc["metadatos"]
-                            st.write("**Fecha de creación:**", metadatos.get("fecha_creacion", "No disponible"))
-                            st.write("**Fecha de modificación:**", metadatos.get("fecha_modificacion", "No disponible"))
+                        for sospecha in analisis["sospechas"]:
+                            st.markdown(f"<li style='color: #b71c1c;'>{sospecha}</li>", unsafe_allow_html=True)
                     
-                    # Análisis visual
-                    with st.expander("🔍 Análisis Visual", expanded=True):
-                        analisis = doc["analisis_visual"]
-                        if "error" not in analisis:
-                            # Crear métricas visuales
-                            col1, col2 = st.columns(2)
-                            with col1:
-                                st.metric("Sellos", analisis["numero_sellos"])
-                                st.metric("Firmas", len(analisis["firmas_detectadas"]))
-                            with col2:
-                                st.metric("Marcas de agua", analisis["marcas_agua"])
-                                st.metric("Calidad", f"{analisis['calidad']['nitidez']:.2f}")
-                            
-                            # Mostrar sospechas
-                            if analisis["sospechas"]:
-                                st.markdown('<div class="sospecha">', unsafe_allow_html=True)
-                                st.warning("⚠️ Elementos sospechosos:")
-                                for sospecha in analisis["sospechas"]:
-                                    st.write(f"- {sospecha}")
-                                st.markdown('</div>', unsafe_allow_html=True)
-                    
-                    # Texto extraído
-                    with st.expander("📝 Texto Extraído"):
-                        st.text_area("", doc["texto"], height=200)
+                        st.markdown("</ul></div>", unsafe_allow_html=True)
 
     # Mostrar resumen de la carta laboral
     if documentos_clasificados["carta laboral"]:
@@ -819,7 +288,8 @@ if uploaded_files:
         
         # Extraer datos de la carta laboral
         carta = documentos_clasificados["carta laboral"][0]
-        datos_carta = extract_with_matcher(carta["texto"])
+        datos_carta = extraer_datos_carta_laboral(modelo, carta["texto"])
+        print("Datos carta laboral:", datos_carta)
 
         if "error" not in datos_carta:
             # Crear columnas para mostrar la información
@@ -839,12 +309,28 @@ if uploaded_files:
                 st.markdown(f"**Fecha Fin:** {datos_carta.get('fecha_fin_labor', 'No disponible')}")
             
             with col3:
+                salario = datos_carta.get('salario')
+                bonificacion = datos_carta.get('bonificacion')
                 st.markdown("### 🏢 Datos de la Empresa")
                 st.markdown(f"**Empresa:** {datos_carta.get('nombre_de_la_empresa', 'No disponible')}")
                 st.markdown(f"**NIT:** {datos_carta.get('nit_de_la_empresa', 'No disponible')}")
-                st.markdown(f"**Salario:** {formatear_valor_monetario(datos_carta.get('salario', 0))}")
-                st.markdown(f"**Bonificación:** {formatear_valor_monetario(datos_carta.get('bonificacion', 0))}")
+                st.markdown(f"**Salario:** {formatear_valor_monetario(salario) if salario else 'No disponible'}")
+                st.markdown(f"**Bonificación:** {formatear_valor_monetario(bonificacion) if bonificacion else 'No disponible'}")
 
+            # Consultar datos de la empresa en RUES y mostrarlos
+            nit_empresa = datos_carta.get('nit_de_la_empresa')
+            if nit_empresa and nit_empresa != 'No disponible':
+                st.markdown("### 🏢 Datos en RUES")
+                datos_rues = consultar_empresa_por_nit(nit_empresa)
+                if 'error' in datos_rues:
+                    st.warning(f"No se pudo consultar RUES: {datos_rues['error']}")
+                else:
+                    st.markdown(f"**Nombre:** {datos_rues.get('nombre', 'No disponible')}")
+                    st.markdown(f"**NIT:** {datos_rues.get('identificacion', 'No disponible')}")
+                    st.markdown(f"**Matrícula:** {datos_rues.get('matricula', 'No disponible')}")
+                    st.markdown(f"**Estado:** {datos_rues.get('estado', 'No disponible')}")
+                    st.markdown(f"**Cámara de Comercio:** {datos_rues.get('camara', 'No disponible')}")
+                    st.markdown(f"**Categoría:** {datos_rues.get('categoria', 'No disponible')}")
     # Comparación de documentos
     if len(documentos_clasificados["carta laboral"]) > 0 or len(documentos_clasificados["colilla de pago"]) > 0 or len(documentos_clasificados["extracto bancario"]) > 0:
         st.markdown("## 🔄 Comparación de Documentos")
@@ -862,13 +348,15 @@ if uploaded_files:
             
             for colilla in documentos_clasificados["colilla de pago"]:
                 # Comparar colilla con carta
-                resultado_colilla_carta = compracion_documentos(
+                resultado_colilla_carta = comparar_documentos(
+                    modelo,
                     colilla["texto"],
                     carta["texto"]
                 )
                 
                 # Comparar colilla con extracto
-                resultado_colilla_extracto = compracion_documentos(
+                resultado_colilla_extracto = comparar_documentos(
+                    modelo,
                     colilla["texto"],
                     extracto["texto"]
                 )
@@ -877,10 +365,42 @@ if uploaded_files:
                 def obtener_valor_seguro(resultado, tipo_doc, campo):
                     try:
                         if isinstance(resultado, dict):
+                            # Primero intentar obtener del documento directamente
+                            if tipo_doc == "extracto_bancario":
+                                if "datos_documento" in resultado:
+                                    datos = resultado["datos_documento"]
+                                    if campo == "nombre":
+                                        return datos.get("nombre_titular", "N/A")
+                                    elif campo == "cuenta":
+                                        return datos.get("numero_cuenta", "N/A")
+                                    elif campo == "salario":
+                                        return str(datos.get("promedio_ingresos", "N/A"))
+                                    elif campo == "tipo_ingreso":
+                                        return datos.get("tipo_ingreso", "N/A")
+                            elif tipo_doc == "colilla_pago":
+                                if "datos_documento" in resultado:
+                                    datos = resultado["datos_documento"]
+                                    if campo == "nombre":
+                                        return datos.get("nombre_empleado", "N/A")
+                                    elif campo == "salario":
+                                        # Usar directamente el campo salario que ya incluye el total
+                                        return str(datos.get("salario", "N/A"))
+                                    elif campo == "empresa":
+                                        return datos.get("empresa", "N/A")
+                            
+                            # Si no se encuentra en datos_documento, intentar en no_coincide
                             if "no_coincide" in resultado:
                                 if campo in resultado["no_coincide"]:
                                     if tipo_doc in resultado["no_coincide"][campo]:
                                         valor = resultado["no_coincide"][campo][tipo_doc]
+                                        if valor is not None and valor != "":
+                                            return valor
+                            
+                            # Si aún no se encuentra, intentar en valores
+                            if "valores" in resultado:
+                                if tipo_doc in resultado["valores"]:
+                                    if campo in resultado["valores"][tipo_doc]:
+                                        valor = resultado["valores"][tipo_doc][campo]
                                         if valor is not None and valor != "":
                                             return valor
                         return "N/A"
@@ -888,32 +408,38 @@ if uploaded_files:
                         print(f"Error al obtener valor para {tipo_doc} - {campo}: {str(e)}")
                         return "N/A"
                 
-                # Calcular porcentaje promedio
+                # Calcular porcentaje promedio considerando los tres documentos
                 porcentaje_colilla_carta = float(resultado_colilla_carta.get('porcentaje', '0%').strip('%'))
                 porcentaje_colilla_extracto = float(resultado_colilla_extracto.get('porcentaje', '0%').strip('%'))
-                porcentaje_promedio = (porcentaje_colilla_carta + porcentaje_colilla_extracto) / 2
+                porcentaje_carta_extracto = float(comparar_documentos(modelo, carta["texto"], extracto["texto"]).get('porcentaje', '0%').strip('%'))
+                
+                # Calcular el promedio de los tres porcentajes
+                porcentaje_promedio = (porcentaje_colilla_carta + porcentaje_colilla_extracto + porcentaje_carta_extracto) / 3
                 
                 # Combinar resultados
                 resultado_combinado = {
                     "tipo": "Comparación Triple",
                     "resultado": {
                         "porcentaje": f"{porcentaje_promedio:.2f}%",
-                        "explicacion": f"Promedio de coincidencia entre documentos: Carta Laboral ({porcentaje_colilla_carta:.2f}%), Extracto Bancario ({porcentaje_colilla_extracto:.2f}%)",
+                        "explicacion": f"Comparación de datos del extracto bancario:\n" +
+                                     f"- Nombre del titular: {extracto['datos_documento'].get('nombre_titular', 'N/A')}\n" +
+                                     f"- Promedio de ingresos: {extracto['datos_documento'].get('promedio_ingresos', 'N/A')}\n" +
+                                     f"vs\n" +
+                                     f"- Nombre en carta laboral: {obtener_valor_seguro(resultado_colilla_carta, 'carta_laboral', 'nombre')}\n" +
+                                     f"- Salario en carta laboral: {obtener_valor_seguro(resultado_colilla_carta, 'carta_laboral', 'salario')}\n" +
+                                     f"- Nombre en colilla: {obtener_valor_seguro(resultado_colilla_carta, 'colilla_pago', 'nombre')}\n" +
+                                     f"- Salario en colilla: {obtener_valor_seguro(resultado_colilla_carta, 'colilla_pago', 'salario')}",
+                        "datos_extracto": extracto.get("datos_documento", {}),
                         "no_coincide": {
                             "nombre": {
                                 "carta_laboral": obtener_valor_seguro(resultado_colilla_carta, "carta_laboral", "nombre"),
                                 "colilla_pago": obtener_valor_seguro(resultado_colilla_carta, "colilla_pago", "nombre"),
-                                "extracto_bancario": obtener_valor_seguro(resultado_colilla_extracto, "extracto_bancario", "nombre")
-                            },
-                            "empresa": {
-                                "carta_laboral": obtener_valor_seguro(resultado_colilla_carta, "carta_laboral", "empresa"),
-                                "colilla_pago": obtener_valor_seguro(resultado_colilla_carta, "colilla_pago", "empresa"),
-                                "extracto_bancario": obtener_valor_seguro(resultado_colilla_extracto, "extracto_bancario", "empresa")
+                                "extracto_bancario": extracto["datos_documento"].get("nombre_titular", "N/A")
                             },
                             "salario": {
                                 "carta_laboral": obtener_valor_seguro(resultado_colilla_carta, "carta_laboral", "salario"),
                                 "colilla_pago": obtener_valor_seguro(resultado_colilla_carta, "colilla_pago", "salario"),
-                                "extracto_bancario": obtener_valor_seguro(resultado_colilla_extracto, "extracto_bancario", "salario")
+                                "extracto_bancario": str(extracto["datos_documento"].get("promedio_ingresos", "N/A"))
                             }
                         }
                     }
@@ -925,7 +451,8 @@ if uploaded_files:
             # Comparar carta laboral con colillas
             if documentos_clasificados["carta laboral"] and documentos_clasificados["colilla de pago"]:
                 for colilla in documentos_clasificados["colilla de pago"]:
-                    resultado = compracion_documentos(
+                    resultado = comparar_documentos(
+                        modelo,
                         colilla["texto"],
                         documentos_clasificados["carta laboral"][0]["texto"]
                     )
@@ -937,7 +464,8 @@ if uploaded_files:
             # Comparar carta laboral con extractos
             if documentos_clasificados["carta laboral"] and documentos_clasificados["extracto bancario"]:
                 for extracto in documentos_clasificados["extracto bancario"]:
-                    resultado = compracion_documentos(
+                    resultado = comparar_documentos(
+                        modelo,
                         extracto["texto"],
                         documentos_clasificados["carta laboral"][0]["texto"]
                     )
@@ -950,7 +478,8 @@ if uploaded_files:
             if documentos_clasificados["colilla de pago"] and documentos_clasificados["extracto bancario"]:
                 for colilla in documentos_clasificados["colilla de pago"]:
                     for extracto in documentos_clasificados["extracto bancario"]:
-                        resultado = compracion_documentos(
+                        resultado = comparar_documentos(
+                            modelo,
                             colilla["texto"],
                             extracto["texto"]
                         )
@@ -971,52 +500,43 @@ if uploaded_files:
                 with col_izq:
                     # Mostrar porcentaje y explicaciones
                     st.markdown("#### 📈 Resumen de Coincidencias")
-                    st.metric(
-                        "Porcentaje Promedio",
-                        resultado["porcentaje"],
-                        delta=None
-                    )
+                    st.markdown(f"<div class='porcentaje-promedio'>Porcentaje Promedio: {resultado['porcentaje']}</div>", unsafe_allow_html=True)
                     
                     st.markdown("#### 📝 Explicación Detallada")
-                    st.markdown("**Análisis de Coincidencias:**")
-                    st.markdown("""
-                    - Se compararon los documentos para verificar la consistencia de la información
-                    - Se analizaron los siguientes campos: nombre, empresa y salario
-                    - Se calculó el porcentaje de coincidencia basado en la similitud de los datos
-                    """)
-                    
-                    st.markdown("**Detalle de Coincidencias:**")
-                    if "explicacion" in resultado:
-                        st.markdown(resultado["explicacion"])
-                    
-                    st.markdown("**Resultado del Análisis:**")
-                    if "explicacion" in resultado:
-                        st.markdown(resultado["explicacion"])
+                    st.markdown(f"<div class='resumen-comparacion'>{resultado['explicacion']}</div>", unsafe_allow_html=True)
                 
                 with col_der:
                     # Mostrar análisis detallado en una tabla
                     st.markdown("#### 🔍 Análisis Detallado")
                     if "no_coincide" in resultado:
-                        for campo, valores in resultado["no_coincide"].items():
-                            st.markdown(f"**{campo.title()}:**")
-                            # Crear tabla con documentos como columnas
-                            headers = []
-                            row_data = []
-                            
-                            # Agregar columnas para cada tipo de documento presente
-                            if "extracto_bancario" in valores:
-                                headers.append("Extracto Bancario")
-                                row_data.append(valores['extracto_bancario'])
-                            if "colilla_pago" in valores:
-                                headers.append("Colilla de Pago")
-                                row_data.append(valores['colilla_pago'])
-                            if "carta_laboral" in valores:
-                                headers.append("Carta Laboral")
-                                row_data.append(valores['carta_laboral'])
-                            
-                            if headers:
-                                df = pd.DataFrame([row_data], columns=headers)
-                                st.table(df)
+                        # Crear una lista para almacenar los datos de la tabla
+                        tabla_data = []
+                        
+                        # Agregar encabezados
+                        headers = ["Campo"]
+                        if "extracto_bancario" in resultado["no_coincide"]["nombre"]:
+                            headers.append("Extracto Bancario")
+                        if "colilla_pago" in resultado["no_coincide"]["nombre"]:
+                            headers.append("Colilla de Pago")
+                        if "carta_laboral" in resultado["no_coincide"]["nombre"]:
+                            headers.append("Carta Laboral")
+                        
+                        # Agregar filas para cada campo
+                        for campo in ["nombre", "empresa", "salario", "cuenta", "tipo_ingreso"]:
+                            if campo in resultado["no_coincide"]:
+                                row = [campo.title()]
+                                if "extracto_bancario" in resultado["no_coincide"][campo]:
+                                    row.append(resultado["no_coincide"][campo]["extracto_bancario"])
+                                if "colilla_pago" in resultado["no_coincide"][campo]:
+                                    row.append(resultado["no_coincide"][campo]["colilla_pago"])
+                                if "carta_laboral" in resultado["no_coincide"][campo]:
+                                    row.append(resultado["no_coincide"][campo]["carta_laboral"])
+                                tabla_data.append(row)
+                        
+                        # Crear y mostrar la tabla
+                        if tabla_data:
+                            df = pd.DataFrame(tabla_data, columns=headers)
+                            st.markdown(df.to_html(classes='tabla-personalizada', index=False), unsafe_allow_html=True)
                 
                 st.markdown("---")
 
@@ -1029,5 +549,5 @@ if uploaded_files:
             label="📥 Descargar Reporte PDF",
             data=pdf_bytes,
             file_name="reporte_analisis.pdf",
-            mime="application/pdf"
-        )
+                mime="application/pdf"
+            )
