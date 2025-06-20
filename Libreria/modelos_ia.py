@@ -108,6 +108,73 @@ class ModeloIA:
                 "fecha_de_expedicion_carta": "01/05/2025"
             }
 
+    def extraer_datos_extracto_bancario(self, texto: str) -> Dict[str, str]:
+        prompt = """
+        Analiza el siguiente texto de un extracto bancario y extrae la siguiente información en formato JSON:
+        - nombre_titular
+        - numero_cuenta
+        - promedio_ingresos
+        - tipo_ingreso (por ejemplo: 'nómina', 'abono domi', etc.)
+
+        Entrega el resultado en formato JSON.
+        """
+
+        try:
+            if self.tipo_modelo == 'openai':
+                response = self.client.chat.completions.create(
+                    model="gpt-4",
+                    messages=[
+                        {"role": "system", "content": "Eres un asistente especializado en extracción de datos de extractos bancarios."},
+                        {"role": "user", "content": prompt + "\n\n" + texto}
+                    ]
+                )
+                contenido = response.choices[0].message.content
+            else:
+                response = self.modelo.generate_content(prompt + "\n\n" + texto)
+                contenido = response.text
+
+            contenido_limpio = self.limpiar_respuesta_json(contenido)
+            return json.loads(contenido_limpio)
+        except Exception as e:
+            print("⚠️ Error al extraer datos de extracto bancario:", e)
+            return {}
+
+    def extraer_datos_colilla_pago(self, texto: str) -> Dict[str, str]:
+        prompt = """
+        Analiza el siguiente texto de una colilla de pago y extrae la siguiente información en formato JSON:
+        - nombre_empleado
+        - cargo
+        - salario_base
+        - bonificaciones
+        - deducciones
+        - salario (esto tiene que ser el valor total que le pagaron)
+        - periodo_pago
+        - empresa
+
+
+        Entrega el resultado en formato JSON.
+        """
+
+        try:
+            if self.tipo_modelo == 'openai':
+                response = self.client.chat.completions.create(
+                    model="gpt-4",
+                    messages=[
+                        {"role": "system", "content": "Eres un asistente especializado en extracción de datos de colillas de pago."},
+                        {"role": "user", "content": prompt + "\n\n" + texto}
+                    ]
+                )
+                contenido = response.choices[0].message.content
+            else:
+                response = self.modelo.generate_content(prompt + "\n\n" + texto)
+                contenido = response.text
+
+            contenido_limpio = self.limpiar_respuesta_json(contenido)
+            return json.loads(contenido_limpio)
+        except Exception as e:
+            print("⚠️ Error al extraer datos de colilla de pago:", e)
+            return {}
+
     def comparar_documentos(self, texto1: str, texto2: str) -> Dict[str, Any]:
         prompt = f"""
         Compara los siguientes dos documentos y proporciona un análisis detallado en formato JSON:

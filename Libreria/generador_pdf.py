@@ -48,16 +48,16 @@ def generar_pdf_report(documentos_clasificados, resultados_comparaciones):
     ]
     
     t = Table(elementos_resumen, colWidths=[3*inch, 3*inch])
-    t.setStyle(TableStyle([
+        t.setStyle(TableStyle([
         ('GRID', (0, 0), (-1, -1), 1, colors.black),
-        ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
-        ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
-        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
-        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+            ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
+            ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+            ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+            ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
         ('FONTSIZE', (0, 0), (-1, -1), 12),
-    ]))
-    elements.append(t)
-    elements.append(Spacer(1, 20))
+        ]))
+        elements.append(t)
+        elements.append(Spacer(1, 20))
     
     # Resultados de comparaciones
     if resultados_comparaciones:
@@ -85,7 +85,7 @@ def generar_pdf_report(documentos_clasificados, resultados_comparaciones):
             ]))
             elements.append(t)
             elements.append(Spacer(1, 10))
-            
+    
             # Discrepancias encontradas
             if "no_coincide" in resultado:
                 elements.append(Paragraph("Discrepancias Encontradas", styles["Heading4"]))
