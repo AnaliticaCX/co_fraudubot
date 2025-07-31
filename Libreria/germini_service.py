@@ -1,6 +1,8 @@
 import google.generativeai as genai
 from typing import Dict, Any, List
 import json
+import time
+from .gemini_logger import gemini_logger, log_gemini_operation
 
 class GeminiService:
     def __init__(self, api_key: str):
@@ -13,6 +15,7 @@ class GeminiService:
         genai.configure(api_key=api_key)
         self.model = genai.GenerativeModel('gemini-1.0-pro')
         
+    @log_gemini_operation("clasificar_documento")
     def clasificar_documento(self, texto: str) -> str:
         """
         Clasifica el tipo de documento usando Gemini.
@@ -25,9 +28,22 @@ class GeminiService:
         {texto}
         """
         
+        start_time = time.time()
         response = self.model.generate_content(prompt)
+        execution_time = time.time() - start_time
+        
+        # Log manual para capturar información adicional
+        gemini_logger.log_request(
+            operation="clasificar_documento",
+            prompt=prompt,
+            response=response.text,
+            execution_time=execution_time,
+            metadata={"texto_original": texto[:200] + "..." if len(texto) > 200 else texto}
+        )
+        
         return response.text.strip().lower()
     
+    @log_gemini_operation("extraer_datos_carta_laboral")
     def extraer_datos_carta_laboral(self, texto: str) -> Dict[str, str]:
         """
         Extrae datos relevantes de una carta laboral usando Gemini.
@@ -48,12 +64,33 @@ class GeminiService:
         {texto}
         """
         
+        start_time = time.time()
         response = self.model.generate_content(prompt)
+        execution_time = time.time() - start_time
+        
         try:
-            return json.loads(response.text)
-        except:
-            return {}
+            result = json.loads(response.text)
+            error_message = None
+        except Exception as e:
+            result = {}
+            error_message = f"Error parsing JSON: {str(e)}"
+        
+        # Log manual para capturar información adicional
+        gemini_logger.log_request(
+            operation="extraer_datos_carta_laboral",
+            prompt=prompt,
+            response=response.text,
+            execution_time=execution_time,
+            error_message=error_message,
+            metadata={
+                "texto_original": texto[:200] + "..." if len(texto) > 200 else texto,
+                "json_parsing_success": error_message is None
+            }
+        )
+        
+        return result
     
+    @log_gemini_operation("comparar_documentos")
     def comparar_documentos(self, texto1: str, texto2: str) -> Dict[str, Any]:
         """
         Compara dos documentos usando Gemini.
@@ -81,12 +118,33 @@ class GeminiService:
         Responde SOLO con el JSON, sin texto adicional.
         """
         
+        start_time = time.time()
         response = self.model.generate_content(prompt)
+        execution_time = time.time() - start_time
+        
         try:
-            return json.loads(response.text)
-        except:
-            return {
+            result = json.loads(response.text)
+            error_message = None
+        except Exception as e:
+            result = {
                 "porcentaje": "0%",
                 "explicacion": "Error al procesar la comparación",
                 "diferencias": {}
             }
+            error_message = f"Error parsing JSON: {str(e)}"
+        
+        # Log manual para capturar información adicional
+        gemini_logger.log_request(
+            operation="comparar_documentos",
+            prompt=prompt,
+            response=response.text,
+            execution_time=execution_time,
+            error_message=error_message,
+            metadata={
+                "texto1_length": len(texto1),
+                "texto2_length": len(texto2),
+                "json_parsing_success": error_message is None
+            }
+        )
+        
+        return result

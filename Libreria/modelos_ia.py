@@ -4,6 +4,8 @@ import google.generativeai as genai
 from typing import Dict, Any
 import json
 import re
+import time
+from .gemini_logger import gemini_logger, log_gemini_operation
 
 class ModeloIA:
     def __init__(self, tipo_modelo: str, api_key: str):
@@ -25,6 +27,7 @@ class ModeloIA:
         texto = texto.replace("```", "")
         return texto.strip()
 
+    @log_gemini_operation("clasificar_documento")
     def clasificar_documento(self, texto: str) -> str:
         prompt = f"""
         Analiza el siguiente texto y determina si es una colilla de pago, carta laboral o extracto bancario.
@@ -35,6 +38,8 @@ class ModeloIA:
         {texto}
         """
 
+        start_time = time.time()
+
         if self.tipo_modelo == 'openai':
             response = self.client.chat.completions.create(
                 model="gpt-4",
@@ -43,10 +48,27 @@ class ModeloIA:
                     {"role": "user", "content": prompt}
                 ]
             )
-            return response.choices[0].message.content.strip().lower()
+            result = response.choices[0].message.content.strip().lower()
         else:
             response = self.modelo.generate_content(prompt)
-            return response.text.strip().lower()
+            result = response.text.strip().lower()
+        
+        execution_time = time.time() - start_time
+        
+        # Log manual para capturar información adicional
+        gemini_logger.log_request(
+            operation="clasificar_documento",
+            prompt=prompt,
+            response=result,
+            model_used="gpt-4" if self.tipo_modelo == 'openai' else "gemini-1.5-flash-002",
+            execution_time=execution_time,
+            metadata={
+                "modelo_utilizado": self.tipo_modelo,
+                "texto_original": texto[:200] + "..." if len(texto) > 200 else texto
+            }
+        )
+        
+        return result
 
     def extraer_datos_carta_laboral(self, texto: str) -> Dict[str, str]:
         prompt = """

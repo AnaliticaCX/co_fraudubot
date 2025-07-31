@@ -18,7 +18,7 @@ def extraccion_texto(file_path):
 
     if file_path.endswith(".pdf"):
         # Convertir PDF a imágenes y extraer texto
-        images = pdf2image.convert_from_path(file_path, poppler_path="/usr/local/bin")
+        images = pdf2image.convert_from_path(file_path)
         for image in images:
             text += pytesseract.image_to_string(image, lang="eng")
     elif file_path.endswith(".docx"):

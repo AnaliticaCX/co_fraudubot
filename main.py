@@ -2,7 +2,11 @@ import streamlit as st
 import os
 import pandas as pd
 from PIL import Image
-# Primero, configurar la página
+import shutil
+from pdf2image import convert_from_bytes
+
+os.makedirs("temp", exist_ok=True)
+# Primero, configurar la página  
 st.set_page_config(
     page_title="Fraudubot - Análisis de Documentos",
     page_icon="🔍",

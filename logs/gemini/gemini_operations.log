@@ -1,0 +1,8 @@
+2025-07-30 13:32:56,808 - GeminiLogger - INFO - Operation: ejemplo_manual | Time: 1.50s | Success: True
+2025-07-30 13:32:57,438 - GeminiLogger - ERROR - Operation: clasificar_documento | Time: 0.63s | Success: False
+2025-07-30 13:41:12,807 - GeminiLogger - ERROR - Operation: clasificar_documento | Time: 2.33s | Success: False
+2025-07-30 13:41:26,059 - GeminiLogger - INFO - Operation: clasificar_documento | Time: 0.95s | Success: True
+2025-07-30 13:41:26,060 - GeminiLogger - INFO - Operation: clasificar_documento | Time: 0.95s | Success: True
+2025-07-30 13:42:47,991 - GeminiLogger - INFO - Operation: clasificar_documento | Time: 0.91s | Success: True
+2025-07-30 13:42:47,993 - GeminiLogger - INFO - Operation: clasificar_documento | Time: 0.91s | Success: True
+2025-07-30 13:42:49,198 - GeminiLogger - ERROR - Operation: clasificar_documento | Time: 0.12s | Success: False
