@@ -99,16 +99,16 @@ class GeminiLogger:
         self.logger.addHandler(console_handler)
     
     def log_request(self, 
-                   operation: str, 
-                   prompt: str, 
-                   response: str, 
-                   model_used: str = "gemini-1.5-flash-002",
-                   execution_time: float = 0.0,
-                   tokens_used: Optional[int] = None,
-                   error_message: Optional[str] = None,
-                   metadata: Optional[Dict[str, Any]] = None,
-                   session_id: Optional[str] = None,
-                   user_id: Optional[str] = None) -> str:
+                    operation: str, 
+                    prompt: str, 
+                    response: str, 
+                    model_used: str = "gemini-1.5-flash-002",
+                    execution_time: float = 0.0,
+                    tokens_used: Optional[int] = None,
+                    error_message: Optional[str] = None,
+                    metadata: Optional[Dict[str, Any]] = None,
+                    session_id: Optional[str] = None,
+                    user_id: Optional[str] = None) -> str:
         """
         Registra una interacción con Gemini.
         
@@ -127,6 +127,14 @@ class GeminiLogger:
         Returns:
             ID único del log entry
         """
+        # Calcular tokens si no se pasan
+        if tokens_used is None and hasattr(self, "modelo") and hasattr(self.modelo, "count_tokens"):
+            try:
+                tokens_used = self.modelo.count_tokens(prompt)
+            except Exception as e:
+                error_message = error_message or f"Error al contar tokens: {str(e)}"
+                tokens_used = None
+
         # Crear entrada de log
         log_entry = GeminiLogEntry(
             timestamp=datetime.now().isoformat(),
