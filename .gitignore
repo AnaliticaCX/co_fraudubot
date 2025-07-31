@@ -20,3 +20,4 @@ myenv/      # In case you named the environment "myenv"
 # Notes:
 # Project files like .project, .actionScriptProperties, and .flexProperties 
 # are intentionally not ignored because they contain important settings.
+__pycache__/
