@@ -2,19 +2,21 @@
 bin-debug/
 bin-release/
 [Oo]bj/
-#[Bb]in/
+# [Bb]in/   # Uncomment if you want to ignore all bin/ folders
 
-# Other files and folders
+# IDE Settings
 .settings/
 
-# Executables
+# Virtual Environments
+.venv/      # Correct way to ignore .venv folder
+myenv/      # In case you named the environment "myenv"
+
+# Executables & Packages
 *.swf
 *.air
 *.ipa
 *.apk
-*.venv
-*myenv
 
-# Project files, i.e. `.project`, `.actionScriptProperties` and `.flexProperties`
-# should NOT be excluded as they contain compiler settings and other important
-# information for Eclipse / Flash Builder.
+# Notes:
+# Project files like .project, .actionScriptProperties, and .flexProperties 
+# are intentionally not ignored because they contain important settings.
