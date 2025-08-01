@@ -5,6 +5,7 @@ from PIL import Image
 import shutil
 from pdf2image import convert_from_bytes
 
+
 os.makedirs("temp", exist_ok=True)
 # Primero, configurar la página  
 st.set_page_config(

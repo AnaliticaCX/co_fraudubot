@@ -10,6 +10,9 @@ bin-release/
 # Virtual Environments
 .venv/      # Correct way to ignore .venv folder
 myenv/      # In case you named the environment "myenv"
+.env
+.env.local
+.env.*.local
 
 # Executables & Packages
 *.swf

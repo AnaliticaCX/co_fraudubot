@@ -2,15 +2,14 @@ services:
   fraudubot:
     build: .
     container_name: fraudubot-app
+    env_file:
+      - .env    
     ports:
       - "8501:8501"
     environment:
       - PYTHONPATH=/app
       - STREAMLIT_SERVER_PORT=8501
       - STREAMLIT_SERVER_ADDRESS=0.0.0.0
-      # Add your API keys here or use a .env file
-      - OPENAI_API_KEY=${OPENAI_API_KEY}
-      - GEMINI_API_KEY=${GEMINI_API_KEY}
     volumes:
       # Mount logs directory for persistence
       - ./logs:/app/logs

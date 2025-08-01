@@ -1,8 +1,7 @@
-2025-07-30 13:32:56,808 - GeminiLogger - INFO - Operation: ejemplo_manual | Time: 1.50s | Success: True
-2025-07-30 13:32:57,438 - GeminiLogger - ERROR - Operation: clasificar_documento | Time: 0.63s | Success: False
-2025-07-30 13:41:12,807 - GeminiLogger - ERROR - Operation: clasificar_documento | Time: 2.33s | Success: False
-2025-07-30 13:41:26,059 - GeminiLogger - INFO - Operation: clasificar_documento | Time: 0.95s | Success: True
-2025-07-30 13:41:26,060 - GeminiLogger - INFO - Operation: clasificar_documento | Time: 0.95s | Success: True
-2025-07-30 13:42:47,991 - GeminiLogger - INFO - Operation: clasificar_documento | Time: 0.91s | Success: True
-2025-07-30 13:42:47,993 - GeminiLogger - INFO - Operation: clasificar_documento | Time: 0.91s | Success: True
-2025-07-30 13:42:49,198 - GeminiLogger - ERROR - Operation: clasificar_documento | Time: 0.12s | Success: False
+2025-08-01 15:28:46,577 - GeminiLogger - ERROR - Operation: clasificar_documento | Time: 9.10s | Success: False
+2025-08-01 15:33:48,110 - GeminiLogger - ERROR - Operation: clasificar_documento | Time: 8.79s | Success: False
+2025-08-01 15:35:33,155 - GeminiLogger - ERROR - Operation: clasificar_documento | Time: 5.97s | Success: False
+2025-08-01 15:39:17,052 - GeminiLogger - ERROR - Operation: clasificar_documento | Time: 3.02s | Success: False
+2025-08-01 15:40:08,568 - GeminiLogger - ERROR - Operation: clasificar_documento | Time: 6.20s | Success: False
+2025-08-01 15:44:24,511 - GeminiLogger - INFO - Operation: clasificar_documento | Time: 1.38s | Success: True
+2025-08-01 15:44:24,515 - GeminiLogger - INFO - Operation: clasificar_documento | Time: 1.38s | Success: True
