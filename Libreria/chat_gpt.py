@@ -2,7 +2,6 @@ import openai
 from typing import Dict, Any, List
 import json
 
-API_KEY = "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"
 
 class ChatGPTHandler:
     def __init__(self, api_key: str):

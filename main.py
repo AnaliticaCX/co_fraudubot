@@ -9,9 +9,10 @@ from pdf2image import convert_from_bytes
 os.makedirs("temp", exist_ok=True)
 # Primero, configurar la página  
 st.set_page_config(
-    page_title="Fraudubot - Análisis de Documentos",
+    page_title="FrauduBot - Detector de Fraudes",
     page_icon="🔍",
-    layout="wide"
+    layout="wide",
+    initial_sidebar_state="collapsed"  # This hides the sidebar by default
 )
 
 # Importar servicios modularizados
@@ -23,6 +24,7 @@ from services.metadatos import extraer_metadatos
 from services.reporte import generar_pdf_report
 from services.utilidades import formatear_valor_monetario
 from services.consulta_rues import consultar_empresa_por_nit
+
 
 # Personalización de colores de fondo y texto
 st.markdown("""
@@ -132,7 +134,7 @@ st.sidebar.title("⚙️ Configuración")
 modelo_seleccionado = st.sidebar.radio(
     "Selecciona el modelo de IA:",
     ["OpenAI", "Gemini", "DeepSeek Local"],
-    index=0
+    index=1
 )
 modelo = obtener_modelo_ia(modelo_seleccionado)
 

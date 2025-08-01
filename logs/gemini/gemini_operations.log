@@ -5,3 +5,12 @@
 2025-08-01 15:40:08,568 - GeminiLogger - ERROR - Operation: clasificar_documento | Time: 6.20s | Success: False
 2025-08-01 15:44:24,511 - GeminiLogger - INFO - Operation: clasificar_documento | Time: 1.38s | Success: True
 2025-08-01 15:44:24,515 - GeminiLogger - INFO - Operation: clasificar_documento | Time: 1.38s | Success: True
+2025-08-01 16:17:27,213 - GeminiLogger - INFO - Operation: clasificar_documento | Time: 1.24s | Success: True
+2025-08-01 16:17:27,219 - GeminiLogger - INFO - Operation: clasificar_documento | Time: 1.25s | Success: True
+2025-08-01 16:41:39,012 - GeminiLogger - INFO - Operation: clasificar_documento | Time: 1.20s | Success: True
+2025-08-01 16:41:39,017 - GeminiLogger - INFO - Operation: clasificar_documento | Time: 1.20s | Success: True
+2025-08-01 16:57:26,018 - GeminiLogger - INFO - Operation: clasificar_documento | Time: 1.44s | Success: True
+2025-08-01 16:57:26,023 - GeminiLogger - INFO - Operation: clasificar_documento | Time: 1.45s | Success: True
+2025-08-01 17:04:15,072 - GeminiLogger - INFO - Operation: clasificar_documento | Time: 1.43s | Success: True
+2025-08-01 17:07:33,166 - GeminiLogger - INFO - Operation: clasificar_documento | Time: 1.29s | Success: True
+2025-08-01 17:14:54,932 - GeminiLogger - INFO - Operation: clasificar_documento | Time: 1.32s | Success: True

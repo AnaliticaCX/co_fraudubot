@@ -5,29 +5,22 @@ from typing import Dict, Any
 import json
 import re
 import time
+import os
 from .gemini_logger import gemini_logger, log_gemini_operation
 
 class ModeloIA:
     def __init__(self, tipo_modelo: str, api_key: str):
         self.tipo_modelo = tipo_modelo.lower()
-
+        self.api_key = api_key
+        
         if self.tipo_modelo == 'openai':
             self.client = OpenAI(api_key=api_key)
+            self.model_name = os.getenv("OPENAI_MODEL", "gpt-4")
         elif self.tipo_modelo == 'gemini':
             genai.configure(api_key=api_key)
-            self.modelo = GenerativeModel('gemini-1.5-flash-002')
-        else:
-            raise ValueError("Tipo de modelo no soportado. Use 'openai' o 'gemini'")
-
-    def limpiar_respuesta_json(self, texto: str) -> str:
-        """
-        Elimina bloques de código tipo ```json ... ``` y deja solo el JSON puro.
-        """
-        texto = re.sub(r"```(?:json)?", "", texto)
-        texto = texto.replace("```", "")
-        return texto.strip()
-
-    @log_gemini_operation("clasificar_documento")
+            self.model_name = os.getenv("GEMINI_MODEL", "gemini-1.5-flash-002")
+            self.modelo = genai.GenerativeModel(self.model_name)
+    
     def clasificar_documento(self, texto: str) -> str:
         prompt = f"""
         Analiza el siguiente texto y determina si es una colilla de pago, carta laboral o extracto bancario.
@@ -39,20 +32,49 @@ class ModeloIA:
         """
 
         start_time = time.time()
+        tokens_used = None
 
         if self.tipo_modelo == 'openai':
             response = self.client.chat.completions.create(
-                model="gpt-4",
+                model=self.model_name,
                 messages=[
                     {"role": "system", "content": "Eres un asistente especializado en análisis de documentos."},
                     {"role": "user", "content": prompt}
                 ]
             )
             result = response.choices[0].message.content.strip().lower()
-        else:
+            tokens_used = response.usage.total_tokens if response.usage else None
+        else:  # Gemini
+            # Count input tokens before generating
+            try:
+                input_tokens = self.modelo.count_tokens(prompt)
+                prompt_token_count = input_tokens.total_tokens
+            except Exception as e:
+                print(f"Error counting input tokens: {e}")
+                prompt_token_count = None
+            
+            # Generate content
             response = self.modelo.generate_content(prompt)
             result = response.text.strip().lower()
-        
+            
+            # Count output tokens after generating
+            try:
+                output_tokens = self.modelo.count_tokens(result)
+                completion_token_count = output_tokens.total_tokens
+            except Exception as e:
+                print(f"Error counting output tokens: {e}")
+                completion_token_count = None
+            
+            # Calculate total tokens
+            if prompt_token_count is not None and completion_token_count is not None:
+                tokens_used = {
+                    'prompt_tokens': prompt_token_count,
+                    'completion_tokens': completion_token_count,
+                    'total_tokens': prompt_token_count + completion_token_count
+                }
+            else:
+                tokens_used = None
+
         execution_time = time.time() - start_time
         
         # Log manual para capturar información adicional
@@ -60,8 +82,9 @@ class ModeloIA:
             operation="clasificar_documento",
             prompt=prompt,
             response=result,
-            model_used="gpt-4" if self.tipo_modelo == 'openai' else "gemini-1.5-flash-002",
+            model_used=self.model_name,
             execution_time=execution_time,
+            tokens_used=tokens_used,
             metadata={
                 "modelo_utilizado": self.tipo_modelo,
                 "texto_original": texto[:200] + "..." if len(texto) > 200 else texto

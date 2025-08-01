@@ -92,5 +92,156 @@
     "metadata": {},
     "session_id": null,
     "user_id": null
+  },
+  {
+    "timestamp": "2025-08-01T16:17:27.209336",
+    "operation": "clasificar_documento",
+    "prompt": "\n        Analiza el siguiente texto y determina si es una colilla de pago, carta laboral o extracto bancario.\n        Responde SOLO con una de estas opciones: \"colilla de pago\", \"carta laboral\", \"extracto bancario\" o \"otro\".\n        SOLO RESPONDE EL TIPO DE DOCUMENTO, NADA MAS\n\n        Texto:\n        YUREIDY JUDITH SIERRA ROSSO\n\nCC 1143398490\n\nSUPERVISOR SGSST\n\nSalario ordinario\n\nCOP 2,232,590\n\nValor hora: COP 9,706.91\nTotal, Pagado\n\nEn Nequi — 3005259500 Ahorros\nCOP 1.760.292\n\nDetalle del Pago\n\nDevengados\n\nISAL1 Salario Basico\nDominicales\n\n00) HORAS DEL 16 AL 31 AGOSTO\nHora Extra Diurna\n\neal HORAS DEL 16 AL 31 AGOSTO\n\nTRA1 Subsidio de Transporte\n\nTotal\n\nNES Y MONTAJES\nERO S.A.S\nNIT 900354025\n\n16/08/2024 -\n\nCantidad Valor\n15 Dias COP 1,116,295\n16 Horas COP 271,794\n24 Horas COP 291,207\n15 Dias COP 81,000\n\nCOP 1,760,296\n\n\n        ",
+    "response": "colilla de pago",
+    "model_used": "gemini-1.5-flash-002",
+    "execution_time": 1.2422876358032227,
+    "tokens_used": null,
+    "error_message": null,
+    "metadata": {
+      "modelo_utilizado": "gemini",
+      "texto_original": "YUREIDY JUDITH SIERRA ROSSO\n\nCC 1143398490\n\nSUPERVISOR SGSST\n\nSalario ordinario\n\nCOP 2,232,590\n\nValor hora: COP 9,706.91\nTotal, Pagado\n\nEn Nequi — 3005259500 Ahorros\nCOP 1.760.292\n\nDetalle del Pago\n\nD..."
+    },
+    "session_id": null,
+    "user_id": null
+  },
+  {
+    "timestamp": "2025-08-01T16:17:27.215798",
+    "operation": "clasificar_documento",
+    "prompt": "",
+    "response": "colilla de pago",
+    "model_used": "gemini-1.5-flash-002",
+    "execution_time": 1.2487883567810059,
+    "tokens_used": null,
+    "error_message": null,
+    "metadata": {},
+    "session_id": null,
+    "user_id": null
+  },
+  {
+    "timestamp": "2025-08-01T16:41:39.007949",
+    "operation": "clasificar_documento",
+    "prompt": "\n        Analiza el siguiente texto y determina si es una colilla de pago, carta laboral o extracto bancario.\n        Responde SOLO con una de estas opciones: \"colilla de pago\", \"carta laboral\", \"extracto bancario\" o \"otro\".\n        SOLO RESPONDE EL TIPO DE DOCUMENTO, NADA MAS\n\n        Texto:\n        YUREIDY JUDITH SIERRA ROSSO\n\nCC 1143398490\n\nSUPERVISOR SGSST\n\nSalario ordinario\n\nCOP 2,232,590\n\nValor hora: COP 9,706.91\nTotal, Pagado\n\nEn Nequi — 3005259500 Ahorros\nCOP 1.760.292\n\nDetalle del Pago\n\nDevengados\n\nISAL1 Salario Basico\nDominicales\n\n00) HORAS DEL 16 AL 31 AGOSTO\nHora Extra Diurna\n\neal HORAS DEL 16 AL 31 AGOSTO\n\nTRA1 Subsidio de Transporte\n\nTotal\n\nNES Y MONTAJES\nERO S.A.S\nNIT 900354025\n\n16/08/2024 -\n\nCantidad Valor\n15 Dias COP 1,116,295\n16 Horas COP 271,794\n24 Horas COP 291,207\n15 Dias COP 81,000\n\nCOP 1,760,296\n\n\n        ",
+    "response": "colilla de pago",
+    "model_used": "gemini-1.5-flash-002",
+    "execution_time": 1.1967952251434326,
+    "tokens_used": null,
+    "error_message": null,
+    "metadata": {
+      "modelo_utilizado": "gemini",
+      "texto_original": "YUREIDY JUDITH SIERRA ROSSO\n\nCC 1143398490\n\nSUPERVISOR SGSST\n\nSalario ordinario\n\nCOP 2,232,590\n\nValor hora: COP 9,706.91\nTotal, Pagado\n\nEn Nequi — 3005259500 Ahorros\nCOP 1.760.292\n\nDetalle del Pago\n\nD..."
+    },
+    "session_id": null,
+    "user_id": null
+  },
+  {
+    "timestamp": "2025-08-01T16:41:39.013579",
+    "operation": "clasificar_documento",
+    "prompt": "",
+    "response": "colilla de pago",
+    "model_used": "gemini-1.5-flash-002",
+    "execution_time": 1.2024626731872559,
+    "tokens_used": null,
+    "error_message": null,
+    "metadata": {},
+    "session_id": null,
+    "user_id": null
+  },
+  {
+    "timestamp": "2025-08-01T16:57:26.012489",
+    "operation": "clasificar_documento",
+    "prompt": "\n        Analiza el siguiente texto y determina si es una colilla de pago, carta laboral o extracto bancario.\n        Responde SOLO con una de estas opciones: \"colilla de pago\", \"carta laboral\", \"extracto bancario\" o \"otro\".\n        SOLO RESPONDE EL TIPO DE DOCUMENTO, NADA MAS\n\n        Texto:\n        YUREIDY JUDITH SIERRA ROSSO\n\nCC 1143398490\n\nSUPERVISOR SGSST\n\nSalario ordinario\n\nCOP 2,232,590\n\nValor hora: COP 9,706.91\nTotal, Pagado\n\nEn Nequi — 3005259500 Ahorros\nCOP 1.760.292\n\nDetalle del Pago\n\nDevengados\n\nISAL1 Salario Basico\nDominicales\n\n00) HORAS DEL 16 AL 31 AGOSTO\nHora Extra Diurna\n\neal HORAS DEL 16 AL 31 AGOSTO\n\nTRA1 Subsidio de Transporte\n\nTotal\n\nNES Y MONTAJES\nERO S.A.S\nNIT 900354025\n\n16/08/2024 -\n\nCantidad Valor\n15 Dias COP 1,116,295\n16 Horas COP 271,794\n24 Horas COP 291,207\n15 Dias COP 81,000\n\nCOP 1,760,296\n\n\n        ",
+    "response": "colilla de pago",
+    "model_used": "gemini-1.5-flash-002",
+    "execution_time": 1.4399569034576416,
+    "tokens_used": {
+      "prompt_tokens": 342,
+      "completion_tokens": 4,
+      "total_tokens": 346
+    },
+    "error_message": null,
+    "metadata": {
+      "modelo_utilizado": "gemini",
+      "texto_original": "YUREIDY JUDITH SIERRA ROSSO\n\nCC 1143398490\n\nSUPERVISOR SGSST\n\nSalario ordinario\n\nCOP 2,232,590\n\nValor hora: COP 9,706.91\nTotal, Pagado\n\nEn Nequi — 3005259500 Ahorros\nCOP 1.760.292\n\nDetalle del Pago\n\nD..."
+    },
+    "session_id": null,
+    "user_id": null
+  },
+  {
+    "timestamp": "2025-08-01T16:57:26.019681",
+    "operation": "clasificar_documento",
+    "prompt": "",
+    "response": "colilla de pago",
+    "model_used": "gemini-1.5-flash-002",
+    "execution_time": 1.44718599319458,
+    "tokens_used": null,
+    "error_message": null,
+    "metadata": {},
+    "session_id": null,
+    "user_id": null
+  },
+  {
+    "timestamp": "2025-08-01T17:04:15.066369",
+    "operation": "clasificar_documento",
+    "prompt": "\n        Analiza el siguiente texto y determina si es una colilla de pago, carta laboral o extracto bancario.\n        Responde SOLO con una de estas opciones: \"colilla de pago\", \"carta laboral\", \"extracto bancario\" o \"otro\".\n        SOLO RESPONDE EL TIPO DE DOCUMENTO, NADA MAS\n\n        Texto:\n        YUREIDY JUDITH SIERRA ROSSO\n\nCC 1143398490\n\nSUPERVISOR SGSST\n\nSalario ordinario\n\nCOP 2,232,590\n\nValor hora: COP 9,706.91\nTotal, Pagado\n\nEn Nequi — 3005259500 Ahorros\nCOP 1.760.292\n\nDetalle del Pago\n\nDevengados\n\nISAL1 Salario Basico\nDominicales\n\n00) HORAS DEL 16 AL 31 AGOSTO\nHora Extra Diurna\n\neal HORAS DEL 16 AL 31 AGOSTO\n\nTRA1 Subsidio de Transporte\n\nTotal\n\nNES Y MONTAJES\nERO S.A.S\nNIT 900354025\n\n16/08/2024 -\n\nCantidad Valor\n15 Dias COP 1,116,295\n16 Horas COP 271,794\n24 Horas COP 291,207\n15 Dias COP 81,000\n\nCOP 1,760,296\n\n\n        ",
+    "response": "colilla de pago",
+    "model_used": "gemini-1.5-flash-002",
+    "execution_time": 1.4273309707641602,
+    "tokens_used": {
+      "prompt_tokens": 342,
+      "completion_tokens": 4,
+      "total_tokens": 346
+    },
+    "error_message": null,
+    "metadata": {
+      "modelo_utilizado": "gemini",
+      "texto_original": "YUREIDY JUDITH SIERRA ROSSO\n\nCC 1143398490\n\nSUPERVISOR SGSST\n\nSalario ordinario\n\nCOP 2,232,590\n\nValor hora: COP 9,706.91\nTotal, Pagado\n\nEn Nequi — 3005259500 Ahorros\nCOP 1.760.292\n\nDetalle del Pago\n\nD..."
+    },
+    "session_id": null,
+    "user_id": null
+  },
+  {
+    "timestamp": "2025-08-01T17:07:33.160359",
+    "operation": "clasificar_documento",
+    "prompt": "\n        Analiza el siguiente texto y determina si es una colilla de pago, carta laboral o extracto bancario.\n        Responde SOLO con una de estas opciones: \"colilla de pago\", \"carta laboral\", \"extracto bancario\" o \"otro\".\n        SOLO RESPONDE EL TIPO DE DOCUMENTO, NADA MAS\n\n        Texto:\n        YUREIDY JUDITH SIERRA ROSSO\n\nCC 1143398490\n\nSUPERVISOR SGSST\n\nSalario ordinario\n\nCOP 2,232,590\n\nValor hora: COP 9,706.91\nTotal, Pagado\n\nEn Nequi — 3005259500 Ahorros\nCOP 1.760.292\n\nDetalle del Pago\n\nDevengados\n\nISAL1 Salario Basico\nDominicales\n\n00) HORAS DEL 16 AL 31 AGOSTO\nHora Extra Diurna\n\neal HORAS DEL 16 AL 31 AGOSTO\n\nTRA1 Subsidio de Transporte\n\nTotal\n\nNES Y MONTAJES\nERO S.A.S\nNIT 900354025\n\n16/08/2024 -\n\nCantidad Valor\n15 Dias COP 1,116,295\n16 Horas COP 271,794\n24 Horas COP 291,207\n15 Dias COP 81,000\n\nCOP 1,760,296\n\n\n        ",
+    "response": "colilla de pago",
+    "model_used": "gemini-1.5-flash-002",
+    "execution_time": 1.2857937812805176,
+    "tokens_used": {
+      "prompt_tokens": 342,
+      "completion_tokens": 4,
+      "total_tokens": 346
+    },
+    "error_message": null,
+    "metadata": {
+      "modelo_utilizado": "gemini",
+      "texto_original": "YUREIDY JUDITH SIERRA ROSSO\n\nCC 1143398490\n\nSUPERVISOR SGSST\n\nSalario ordinario\n\nCOP 2,232,590\n\nValor hora: COP 9,706.91\nTotal, Pagado\n\nEn Nequi — 3005259500 Ahorros\nCOP 1.760.292\n\nDetalle del Pago\n\nD..."
+    },
+    "session_id": null,
+    "user_id": null
+  },
+  {
+    "timestamp": "2025-08-01T17:14:54.926257",
+    "operation": "clasificar_documento",
+    "prompt": "\n        Analiza el siguiente texto y determina si es una colilla de pago, carta laboral o extracto bancario.\n        Responde SOLO con una de estas opciones: \"colilla de pago\", \"carta laboral\", \"extracto bancario\" o \"otro\".\n        SOLO RESPONDE EL TIPO DE DOCUMENTO, NADA MAS\n\n        Texto:\n        YUREIDY JUDITH SIERRA ROSSO\n\nCC 1143398490\n\nSUPERVISOR SGSST\n\nSalario ordinario\n\nCOP 2,232,590\n\nValor hora: COP 9,706.91\nTotal, Pagado\n\nEn Nequi — 3005259500 Ahorros\nCOP 1.760.292\n\nDetalle del Pago\n\nDevengados\n\nISAL1 Salario Basico\nDominicales\n\n00) HORAS DEL 16 AL 31 AGOSTO\nHora Extra Diurna\n\neal HORAS DEL 16 AL 31 AGOSTO\n\nTRA1 Subsidio de Transporte\n\nTotal\n\nNES Y MONTAJES\nERO S.A.S\nNIT 900354025\n\n16/08/2024 -\n\nCantidad Valor\n15 Dias COP 1,116,295\n16 Horas COP 271,794\n24 Horas COP 291,207\n15 Dias COP 81,000\n\nCOP 1,760,296\n\n\n        ",
+    "response": "colilla de pago",
+    "model_used": "gemini-1.5-flash-002",
+    "execution_time": 1.3208425045013428,
+    "tokens_used": {
+      "prompt_tokens": 342,
+      "completion_tokens": 4,
+      "total_tokens": 346
+    },
+    "error_message": null,
+    "metadata": {
+      "modelo_utilizado": "gemini",
+      "texto_original": "YUREIDY JUDITH SIERRA ROSSO\n\nCC 1143398490\n\nSUPERVISOR SGSST\n\nSalario ordinario\n\nCOP 2,232,590\n\nValor hora: COP 9,706.91\nTotal, Pagado\n\nEn Nequi — 3005259500 Ahorros\nCOP 1.760.292\n\nDetalle del Pago\n\nD..."
+    },
+    "session_id": null,
+    "user_id": null
   }
 ]
