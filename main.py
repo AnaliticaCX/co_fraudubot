@@ -4,7 +4,15 @@ import pandas as pd
 from PIL import Image
 import shutil
 from pdf2image import convert_from_bytes
-
+# Importar servicios modularizados
+from libreria.utilidades import obtener_modelo_ia
+from services.extraccion import extraer_texto, extraer_datos_carta_laboral, extraer_datos_extracto_bancario, extraer_datos_colilla_pago
+from services.comparacion import comparar_documentos
+from services.visual import analizar_documento_visual
+from services.metadatos import extraer_metadatos
+from services.reporte import generar_pdf_report
+from libreria.utilidades import formatear_valor_monetario
+from services.consulta_rues import consultar_empresa_por_nit
 
 os.makedirs("temp", exist_ok=True)
 # Primero, configurar la página  
@@ -14,16 +22,6 @@ st.set_page_config(
     layout="wide",
     initial_sidebar_state="collapsed"  # This hides the sidebar by default
 )
-
-# Importar servicios modularizados
-from services.modelos import obtener_modelo_ia
-from services.extraccion import extraer_texto, extraer_datos_carta_laboral, extraer_datos_extracto_bancario, extraer_datos_colilla_pago
-from services.comparacion import comparar_documentos
-from services.visual import analizar_documento_visual
-from services.metadatos import extraer_metadatos
-from services.reporte import generar_pdf_report
-from services.utilidades import formatear_valor_monetario
-from services.consulta_rues import consultar_empresa_por_nit
 
 
 # Personalización de colores de fondo y texto

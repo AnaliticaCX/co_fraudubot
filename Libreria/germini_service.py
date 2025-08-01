@@ -13,7 +13,9 @@ class GeminiService:
             api_key (str): API key de Google Gemini
         """
         genai.configure(api_key=api_key)
-        self.model = genai.GenerativeModel('gemini-1.0-pro')
+        # Use the model from environment configuration
+        model_name = os.getenv('GEMINI_MODEL', 'gemini-1.5-flash-002')
+        self.model = genai.GenerativeModel(model_name)
         
     @log_gemini_operation("clasificar_documento")
     def clasificar_documento(self, texto: str) -> str:

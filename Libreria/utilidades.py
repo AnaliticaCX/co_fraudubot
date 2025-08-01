@@ -1,6 +1,21 @@
 import streamlit as st
 from typing import Dict, Any, List
 import json
+import os
+import re
+from joblib import load
+from libreria.modelos_ia import ModeloIA
+from libreria.modelo_local import ModeloDeepSeek
+
+# Carga de modelos de machine learning
+RUTA_RF = './Modelos_Entrenados/Model_RF.pkl'
+RUTA_RL = './Modelos_Entrenados/Model_RL_R.pkl'
+
+model_rf = load(RUTA_RF)
+model_rl = load(RUTA_RL)
+
+# TODO: Permitir seleccionar el modelo desde fuera de este módulo
+
 
 def formatear_valor_monetario(valor: Any) -> str:
     """
@@ -67,3 +82,165 @@ def mostrar_datos_carta_laboral(datos: Dict[str, str]) -> None:
         st.write(f"- Inicio: {datos.get('fecha_inicio_labor', 'No disponible')}")
         st.write(f"- Fin: {datos.get('fecha_fin_labor', 'No disponible')}")
         st.write(f"- Expedición: {datos.get('fecha_de_expedicion_carta', 'No disponible')}")
+
+
+def obtener_modelo_ia(nombre_modelo):
+    """Obtiene el modelo de IA seleccionado."""
+    if nombre_modelo.lower() == "openai":
+        return ModeloIA("openai", os.getenv("OPENAI_API_KEY"))
+    elif nombre_modelo.lower() == "gemini":
+        return ModeloIA("gemini", os.getenv("GOOGLE_API_KEY"))
+    elif nombre_modelo.lower() == "deepseek local":
+        return ModeloDeepSeek()
+    else:
+        raise ValueError("Modelo IA no soportado")
+
+# === UTILIDADES (merged from utilidades.py) ===
+
+def formatear_valor_monetario(valor):
+    """
+    Formatea un valor monetario para estandarizar su representación.
+    
+    Args:
+        valor (str): Valor monetario a formatear
+        
+    Returns:
+        str: Valor formateado
+    """
+    if not valor or valor == "No especificado":
+        return "No especificado"
+    
+    # Remover espacios y convertir a string
+    valor_str = str(valor).strip()
+    
+    # Si ya está formateado, devolverlo
+    if valor_str.startswith("$"):
+        return valor_str
+    
+    # Remover caracteres no numéricos excepto puntos y comas
+    valor_limpio = re.sub(r'[^\d.,]', '', valor_str)
+    
+    if not valor_limpio:
+        return "No especificado"
+    
+    try:
+        # Convertir a float para validar
+        valor_float = float(valor_limpio.replace(',', ''))
+        
+        # Formatear con separadores de miles
+        valor_formateado = f"${valor_float:,.0f}"
+        
+        return valor_formateado
+    except ValueError:
+        return valor_str
+
+def limpiar_texto(texto):
+    """
+    Limpia y normaliza texto extraído de documentos.
+    
+    Args:
+        texto (str): Texto a limpiar
+        
+    Returns:
+        str: Texto limpio
+    """
+    if not texto:
+        return ""
+    
+    # Remover caracteres especiales y normalizar espacios
+    texto_limpio = re.sub(r'\s+', ' ', texto.strip())
+    
+    return texto_limpio
+
+def validar_numero_documento(numero):
+    """
+    Valida que un número de documento tenga un formato correcto.
+    
+    Args:
+        numero (str): Número de documento a validar
+        
+    Returns:
+        bool: True si es válido, False en caso contrario
+    """
+    if not numero:
+        return False
+    
+    # Remover espacios y caracteres especiales
+    numero_limpio = re.sub(r'[^\d]', '', str(numero))
+    
+    # Validar longitud (entre 6 y 12 dígitos para documentos colombianos)
+    return 6 <= len(numero_limpio) <= 12
+
+def extraer_nit_de_texto(texto):
+    """
+    Extrae el NIT de un texto usando expresiones regulares.
+    
+    Args:
+        texto (str): Texto donde buscar el NIT
+        
+    Returns:
+        str: NIT encontrado o None
+    """
+    if not texto:
+        return None
+    
+    # Patrones para NIT
+    patrones_nit = [
+        r'NIT[:\s]*(\d{3,12}[-]?\d?)',
+        r'Nit[:\s]*(\d{3,12}[-]?\d?)',
+        r'nit[:\s]*(\d{3,12}[-]?\d?)',
+    ]
+    
+    for patron in patrones_nit:
+        match = re.search(patron, texto)
+        if match:
+            return match.group(1)
+    
+    return None
+
+import re
+
+def limpiar_nit(nit):
+    """
+    Limpia y formatea un NIT removiendo caracteres especiales.
+    
+    Args:
+        nit (str): NIT a limpiar
+        
+    Returns:
+        str: NIT limpio (solo números y guión)
+    """
+    if not nit:
+        return ""
+    
+    # Remover espacios y caracteres especiales excepto números y guión
+    nit_limpio = re.sub(r'[^\d-]', '', str(nit).strip())
+    
+    return nit_limpio
+
+def extraer_nit_de_texto(texto):
+    """
+    Extrae el NIT de un texto usando expresiones regulares.
+    
+    Args:
+        texto (str): Texto donde buscar el NIT
+        
+    Returns:
+        str: NIT encontrado o None
+    """
+    if not texto:
+        return None
+    
+    # Patrones para NIT
+    patrones_nit = [
+        r'NIT[:\s]*(\d{3,12}[-]?\d?)',
+        r'Nit[:\s]*(\d{3,12}[-]?\d?)',
+        r'nit[:\s]*(\d{3,12}[-]?\d?)',
+    ]
+    
+    for patron in patrones_nit:
+        match = re.search(patron, texto)
+        if match:
+            return limpiar_nit(match.group(1))
+    
+    return None

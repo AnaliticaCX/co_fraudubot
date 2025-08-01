@@ -1,7 +1,7 @@
 import re
 import time
 from selenium import webdriver
-from services.utilidades import limpiar_nit
+from libreria.utilidades import limpiar_nit
 
 def extraer_nombre(texto):
     match = re.search(r"\n([A-ZÑ&\s\.\-]{3,})\nIdentificación", texto)

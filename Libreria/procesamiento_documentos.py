@@ -4,35 +4,56 @@ from .modelos_ia import ModeloIA
 import PyPDF2
 from libreria.extraction_texto import extraccion_texto
 
-def procesar_documentos_subidos(uploaded_files: List[Any], modelo: Any) -> Dict[str, Any]:
-    """
-    Procesa los documentos subidos y los clasifica.
-    """
-    documentos_clasificados = []
-    for file in uploaded_files:
-        texto = file.getvalue().decode('utf-8')
-        tipo = modelo.clasificar_documento(texto)
-        documentos_clasificados.append({"tipo": tipo, "texto": texto})
-    
-    return documentos_clasificados
-
-def separar_documentos(documentos_clasificados: List[Dict[str, Any]]) -> Dict[str, Any]:
-    """
-    Separa los documentos en carta laboral y colillas de pago.
-    """
-    carta_laboral = None
-    colillas_pago = []
-    
-    for doc in documentos_clasificados:
-        if doc["tipo"] == "carta laboral":
-            carta_laboral = doc["texto"]
-        elif doc["tipo"] == "colilla de pago":
-            colillas_pago.append(doc["texto"])
-    
-    return {
-        "carta_laboral": carta_laboral,
-        "colillas_pago": colillas_pago
+# === CONFIGURATION ===
+TIPOS_DOCUMENTOS = {
+    "colilla de pago": {
+        "habilitado": True,
+        "validaciones": {
+            "consistencia_datos": True,
+            "analisis_visual": True,
+            "metadatos": True,
+            "firmas": True,
+            "calidad": True
+        }
+    },
+    "carta laboral": {
+        "habilitado": True,
+        "validaciones": {
+            "consistencia_datos": True,
+            "analisis_visual": True,
+            "metadatos": True,
+            "firmas": True,
+            "calidad": True
+        }
+    },
+    "extracto bancario": {
+        "habilitado": False,
+        "validaciones": {
+            "consistencia_datos": True,
+            "analisis_visual": True,
+            "metadatos": True,
+            "firmas": False,
+            "calidad": True
+        }
     }
+}
+
+UMBRALES = {
+    "riesgo_alto": 0.7,
+    "riesgo_medio": 0.5,
+    "discrepancia_montos": 10,
+    "calidad_minima": 100
+}
+
+# === FUNCTIONS THAT USE THE CONFIG ===
+
+def es_tipo_documento_habilitado(tipo_documento: str) -> bool:
+    """Verifica si un tipo de documento está habilitado."""
+    return TIPOS_DOCUMENTOS.get(tipo_documento, {}).get("habilitado", False)
+
+def obtener_validaciones_documento(tipo_documento: str) -> Dict[str, bool]:
+    """Obtiene las validaciones habilitadas para un tipo de documento."""
+    return TIPOS_DOCUMENTOS.get(tipo_documento, {}).get("validaciones", {})
 
 def procesar_documentos_subidos(uploaded_files: List[Any], modelo: ModeloIA) -> Dict[str, Any]:
     """
@@ -44,48 +65,61 @@ def procesar_documentos_subidos(uploaded_files: List[Any], modelo: ModeloIA) -> 
     # Clasificar documentos
     documentos_clasificados = []
     for file in uploaded_files:
-        texto = file.getvalue().decode('utf-8')
+        texto = extraccion_texto(file)
         tipo = modelo.clasificar_documento(texto)
-        documentos_clasificados.append({"tipo": tipo, "texto": texto})
+        
+        # USE TIPOS_DOCUMENTOS: Validar si el tipo está habilitado
+        if es_tipo_documento_habilitado(tipo):
+            documentos_clasificados.append({"tipo": tipo, "texto": texto})
+        else:
+            st.warning(f"Tipo de documento '{tipo}' no está habilitado para procesamiento.")
     
-    # Separar carta laboral y colillas de pago
+    # Separar documentos
+    documentos_separados = separar_documentos(documentos_clasificados)
+    
+    # Comparar si hay carta laboral y colillas
+    if documentos_separados["carta_laboral"] and documentos_separados["colillas_pago"]:
+        return {
+            **documentos_separados,
+            "resultado_comparacion": modelo.comparar_documentos(
+                documentos_separados["carta_laboral"], 
+                documentos_separados["colillas_pago"]
+            )
+        }
+    
+    return documentos_separados
+
+def separar_documentos(documentos_clasificados: List[Dict[str, Any]]) -> Dict[str, Any]:
+    """
+    Separa los documentos en carta laboral y colillas de pago.
+    """
     carta_laboral = None
     colillas_pago = []
     
     for doc in documentos_clasificados:
-        if doc["tipo"] == "carta laboral":
+        tipo = doc["tipo"]
+        
+        # USE TIPOS_DOCUMENTOS: Solo procesar tipos habilitados
+        if not es_tipo_documento_habilitado(tipo):
+            continue
+            
+        if tipo == "carta laboral":
             carta_laboral = doc["texto"]
-        elif doc["tipo"] == "colilla de pago":
+        elif tipo == "colilla de pago":
             colillas_pago.append(doc["texto"])
     
-    # Comparar documentos si hay carta laboral y colillas
-    if carta_laboral and colillas_pago:
-        return {
-            "carta_laboral": carta_laboral,
-            "colillas_pago": colillas_pago,
-            "resultado_comparacion": modelo.comparar_documentos(carta_laboral, colillas_pago)
-        }
-    
-    return None
+    return {
+        "carta_laboral": carta_laboral,
+        "colillas_pago": colillas_pago
+    }
 
-def extraccion_texto(file) -> str:
+def validar_calidad_documento(porcentaje_confianza: float) -> str:
     """
-    Extrae texto de diferentes tipos de archivos usando la librería existente.
+    Valida la calidad del documento usando los umbrales configurados.
     """
-    file_type = file.type
-    
-    try:
-        if file_type == "application/pdf":
-            # Usar la función de extracción de PDF existente
-            return extraer_texto_pdf(file)
-            
-        elif file_type.startswith("image/"):
-            # Usar la función de extracción de imagen existente
-            return extraer_texto_imagen(file)
-            
-        else:
-            return file.getvalue().decode('utf-8')
-            
-    except Exception as e:
-        print(f"Error al extraer texto del archivo: {str(e)}")
-        return ""
+    if porcentaje_confianza >= UMBRALES["riesgo_alto"]:
+        return "Alta confianza"
+    elif porcentaje_confianza >= UMBRALES["riesgo_medio"]:
+        return "Media confianza"
+    else:
+        return "Baja confianza"
