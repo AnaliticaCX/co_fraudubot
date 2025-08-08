@@ -1,9 +1,6 @@
 import oracledb
 
 def obtener_conexion():
-    username = 'actuaria'
-    password = 'ydybn8CZYjHQC'
-    dsn = 'actuaria.c8gecouhgunh.us-east-1.rds.amazonaws.com:1521/actuaria' 
 
     try:
         connection = oracledb.connect(
