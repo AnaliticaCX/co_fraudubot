@@ -4,6 +4,8 @@ import pandas as pd
 from PIL import Image
 import shutil
 from pdf2image import convert_from_bytes
+from services.pipeline import preprocesamiento    
+from services.pipeline import cargar_datos_desde_bd
 # Importar servicios modularizados
 from libreria.utilidades import obtener_modelo_ia
 from services.extraccion import extraer_texto, extraer_datos_carta_laboral, extraer_datos_extracto_bancario, extraer_datos_colilla_pago
@@ -22,6 +24,14 @@ st.set_page_config(
     layout="wide",
     initial_sidebar_state="collapsed"  # This hides the sidebar by default
 )
+
+from libreria.login import verificar_login
+
+verificar_login()
+
+##st.title(f"Bienvenida, {st.session_state['usuario']} 👋")
+st.write(f"Bienvenida, {st.session_state['usuario']} 👋")
+
 
 
 # Personalización de colores de fondo y texto
@@ -174,6 +184,33 @@ logo = Image.open("img/logo_fraudubot.png")
 col1, col2, col3 = st.columns([1, 2, 1])
 with col2:
     st.image(logo, use_container_width=True)
+
+
+# --- Input para número de solicitud ---
+    with st.container():
+        st.subheader("📝 Registra el número de solicitud")
+
+        # Crear columnas para centrar el input y el botón
+        col1, col2, col3 = st.columns([2, 3, 2])  # Ajusta proporciones según necesites
+
+        with col2:
+            id_solicitud = st.text_input("Número de solicitud", label_visibility="collapsed")
+
+            if st.button("Confirmar"):
+                if id_solicitud:
+                    st.session_state['id_solicitud'] = id_solicitud
+                    st.markdown(
+                        f"""
+                        <div style="background-color:#d4edda; padding:10px; border-radius:5px; border:1px solid #c3e6cb; display: inline-block; margin-bottom: 0px;">
+                            <span style="color:#6c757d; white-space: nowrap;">Número de solicitud registrado: {id_solicitud}</span>
+                        </div>
+                        """,
+                        unsafe_allow_html=True
+                    )
+                else:
+                    st.warning("Por favor ingresa un número de solicitud válido.")
+
+
 
 # Sección de carga de archivos
 with st.container():
@@ -556,3 +593,79 @@ if uploaded_files:
             file_name="reporte_analisis.pdf",
                 mime="application/pdf"
             )
+
+if st.button("Consultar probabilidad"):
+    # Check if id_solicitud exists in session state
+    if 'id_solicitud' not in st.session_state or not st.session_state['id_solicitud']:
+        st.error("❌ Por favor ingresa y confirma un número de solicitud primero.")
+    else:
+        with st.spinner("Ejecutando análisis..."):
+            try:
+                # Test database connection first
+                from services.pipeline import test_database_connection
+                
+                connection_success = test_database_connection()
+                if not connection_success:
+                    st.error("❌ Error de conexión a la base de datos. Verifica:")
+                    st.info("• Credenciales de base de datos")
+                    st.info("• Estado del servidor de base de datos")
+                    st.info("• Conectividad de red")
+                else:
+                    st.info("🔄 Cargando datos desde la base de datos...")
+                    df = cargar_datos_desde_bd()
+                    
+                    # Check if DataFrame was loaded successfully
+                    if df is None:
+                        st.error("❌ No se pudieron cargar los datos desde la base de datos.")
+                    elif df.empty:
+                        st.warning("⚠️ No se encontraron datos en la base de datos.")
+                    else:
+                        # Check if SOLICITUD column exists
+                        if 'SOLICITUD' not in df.columns:
+                            st.error("❌ La columna 'SOLICITUD' no existe en los datos cargados.")
+                            st.info(f"📊 Columnas disponibles: {list(df.columns)}")
+                        else:
+                            # Filter by solicitud ID
+                            solicitud_id = int(st.session_state['id_solicitud'])
+                            df_filtered = df[df['SOLICITUD'] == solicitud_id]
+                            
+                            if df_filtered.empty:
+                                st.warning(f"⚠️ No se encontró la solicitud {solicitud_id} en la base de datos.")
+                                # Show some available solicitudes for debugging
+                                unique_solicitudes = df['SOLICITUD'].unique()[:10]
+                                st.info(f"📋 Algunas solicitudes disponibles: {unique_solicitudes}")
+                            else:
+                                st.info("⚙️ Ejecutando modelo de predicción...")
+                                resultado = preprocesamiento.transform(df_filtered)
+                                st.success("✅ Pipeline ejecutado correctamente.")
+                                
+                                # Mostrar resultados
+                                if resultado and len(resultado) > 0:
+                                    probabilidad = resultado[0]
+                                    st.markdown(f"""
+                                    <div style="background-color: #e8f5e8; padding: 20px; border-radius: 10px; border-left: 5px solid #4CAF50;">
+                                        <h3 style="color: #2e7d32; margin: 0;">📊 Resultado del Análisis</h3>
+                                        <p style="font-size: 18px; margin: 10px 0; color: #1b5e20;">
+                                            <strong>Probabilidad de fraude: {probabilidad:.2%}</strong>
+                                        </p>
+                                    </div>
+                                    """, unsafe_allow_html=True)
+                                    
+                                    # Add risk level interpretation
+                                    if probabilidad > 0.7:
+                                        st.error("🚨 RIESGO ALTO - Se recomienda revisión manual inmediata")
+                                    elif probabilidad > 0.4:
+                                        st.warning("⚠️ RIESGO MEDIO - Se recomienda verificación adicional")
+                                    else:
+                                        st.success("✅ RIESGO BAJO - Perfil aceptable")
+                                else:
+                                    st.warning("⚠️ El pipeline no devolvió resultados.")
+                            
+            except ValueError as e:
+                st.error(f"❌ Error en el formato del número de solicitud: {str(e)}")
+            except Exception as e:
+                st.error(f"❌ Error al ejecutar el análisis: {str(e)}")
+                # Add more detailed error information for debugging
+                import traceback
+                with st.expander("Ver detalles del error"):
+                    st.code(traceback.format_exc())

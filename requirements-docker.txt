@@ -32,4 +32,4 @@ selenium==4.20.0
 chromedriver-autoinstaller==0.6.4
 bs4==0.0.2
 lxml==5.2.1
-
+oracledb==1.4.0

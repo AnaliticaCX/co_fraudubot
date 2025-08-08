@@ -48,6 +48,9 @@ COPY requirements-docker.txt .
 # Install uv
 RUN pip install uv
 
+# Increase timeout to 2 minutes
+ENV UV_HTTP_TIMEOUT=180
+
 # Install dependencies with uv (modo sistema)
 RUN uv pip install --system -r requirements-docker.txt
 
@@ -57,7 +60,3 @@ WORKDIR /app
 
 # Comando por defecto (modifica si usas Streamlit u otro)
 CMD ["streamlit", "run", "main.py"]
-
-
-
-
