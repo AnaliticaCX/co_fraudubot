@@ -1,4 +1,4 @@
-from openai import OpenAI
+import openai
 from google.generativeai import GenerativeModel
 import google.generativeai as genai
 from typing import Dict, Any
@@ -10,7 +10,9 @@ class ModeloIA:
         self.tipo_modelo = tipo_modelo.lower()
 
         if self.tipo_modelo == 'openai':
-            self.client = OpenAI(api_key=api_key)
+            import openai
+            openai.api_key = api_key
+            self.client = openai
         elif self.tipo_modelo == 'gemini':
             genai.configure(api_key=api_key)
             self.modelo = GenerativeModel('gemini-1.5-flash-002')

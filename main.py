@@ -1,13 +1,28 @@
-import streamlit as st
+import sys
 import os
-import pandas as pd
-from PIL import Image
+sys.path.append(os.path.abspath(os.path.dirname(__file__)))
+
+
+# main.py
+import streamlit as st
+
 # Primero, configurar la página
 st.set_page_config(
     page_title="Fraudubot - Análisis de Documentos",
     page_icon="🔍",
     layout="wide"
 )
+from libreria.login import verificar_login
+
+verificar_login()
+
+##st.title(f"Bienvenida, {st.session_state['usuario']} 👋")
+st.write(f"Bienvenida, {st.session_state['usuario']} 👋")
+
+import streamlit as st
+import os
+import pandas as pd
+from PIL import Image
 
 # Importar servicios modularizados
 from services.modelos import obtener_modelo_ia
@@ -18,6 +33,7 @@ from services.metadatos import extraer_metadatos
 from services.reporte import generar_pdf_report
 from services.utilidades import formatear_valor_monetario
 from services.consulta_rues import consultar_empresa_por_nit
+
 
 # Personalización de colores de fondo y texto
 st.markdown("""
@@ -169,6 +185,31 @@ logo = Image.open("img/logo_fraudubot.png")
 col1, col2, col3 = st.columns([1, 2, 1])
 with col2:
     st.image(logo, use_container_width=True)
+
+# --- Input para número de solicitud ---
+    with st.container():
+        st.subheader("📝 Registra el número de solicitud")
+
+        # Crear columnas para centrar el input y el botón
+        col1, col2, col3 = st.columns([2, 3, 2])  # Ajusta proporciones según necesites
+
+        with col2:
+            id_solicitud = st.text_input("Número de solicitud", label_visibility="collapsed")
+
+            if st.button("Confirmar"):
+                if id_solicitud:
+                    st.session_state['id_solicitud'] = id_solicitud
+                    st.markdown(
+                        f"""
+                        <div style="background-color:#d4edda; padding:10px; border-radius:5px; border:1px solid #c3e6cb; display: inline-block; margin-bottom: 0px;">
+                            <span style="color:#6c757d; white-space: nowrap;">Número de solicitud registrado: {id_solicitud}</span>
+                        </div>
+                        """,
+                        unsafe_allow_html=True
+                    )
+                else:
+                    st.warning("Por favor ingresa un número de solicitud válido.")
+
 
 # Sección de carga de archivos
 with st.container():
@@ -551,3 +592,18 @@ if uploaded_files:
             file_name="reporte_analisis.pdf",
                 mime="application/pdf"
             )
+
+from services.pipeline import preprocesamiento    
+from services.pipeline import cargar_datos_desde_bd
+
+if st.button("Consultar probabilidad"):
+    with st.spinner("Ejecutando análisis..."):
+        df = cargar_datos_desde_bd()
+        df = df[df['SOLICITUD'] == int(st.session_state['id_solicitud'])]
+        resultado = preprocesamiento.transform(df)  # Aquí llamas tu pipeline importado
+        st.success("✅ Pipeline ejecutado correctamente.")
+
+        # Mostrar resultados si quieres
+        st.write("Este cliente tiene una probabilidad de fraude del: " + str(resultado[0]))
+   
+
