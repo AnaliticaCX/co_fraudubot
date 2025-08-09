@@ -202,21 +202,15 @@ import re
 
 def limpiar_nit(nit):
     """
-    Limpia y formatea un NIT removiendo caracteres especiales.
-    
-    Args:
-        nit (str): NIT a limpiar
-        
-    Returns:
-        str: NIT limpio (solo números y guión)
+    Devuelve solo los dígitos antes del guion del NIT.
+    Ejemplo: '900.469.873-1' -> '900469873'
     """
-    if not nit:
-        return ""
-    
-    # Remover espacios y caracteres especiales excepto números y guión
-    nit_limpio = re.sub(r'[^\d-]', '', str(nit).strip())
-    
-    return nit_limpio
+    import re
+    # Quitar todo lo que no sea dígito o guion
+    nit = re.sub(r"[^\d\-]", "", nit)
+    # Separar por guion y tomar la primera parte
+    nit_base = nit.split('-')[0]
+    return nit_base
 
 def extraer_nit_de_texto(texto):
     """

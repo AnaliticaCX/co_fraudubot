@@ -309,9 +309,9 @@ def construccion_indicadores(df):
         
 import joblib
 def predecir_con_dos_modelos(df_procesado):
-        
-        modelo1 = joblib.load('/Users/zulybercampos/Documents/co_fraudubot/Modelos_Entrenados/model_RF_27072025.pkl')
-        modelo2 = joblib.load('/Users/zulybercampos/Documents/co_fraudubot/Modelos_Entrenados/model_RLR_27072025.pkl')
+
+        modelo1 = joblib.load('./Modelos_Entrenados/model_RF_27072025.pkl')
+        modelo2 = joblib.load('./Modelos_Entrenados/model_RLR_27072025.pkl')
         peso_modelo1 = 0.4
         peso_modelo2 = 0.6
         

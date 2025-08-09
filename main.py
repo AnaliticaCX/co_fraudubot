@@ -133,6 +133,57 @@ st.markdown("""
         white-space: pre-line;
         margin-bottom: 1rem;
     }
+    /* Custom button styling to match your theme */
+    .stButton > button {
+        background-color: rgb(5, 27, 95) !important;
+        color: white !important;
+        border: 2px solid rgb(5, 27, 95) !important;
+        border-radius: 8px !important;
+        padding: 0.75rem 1.5rem !important;
+        font-weight: 600 !important;
+        font-size: 1rem !important;
+        transition: all 0.3s ease !important;
+        box-shadow: 0 2px 4px rgba(5, 27, 95, 0.2) !important;
+    }
+    .stButton > button:hover {
+        background-color: #ffffff !important;
+        color: rgb(5, 27, 95) !important;
+        border: 2px solid rgb(5, 27, 95) !important;
+        transform: translateY(-2px) !important;
+        box-shadow: 0 4px 12px rgba(5, 27, 95, 0.3) !important;
+    }
+    .stButton > button:active {
+        transform: translateY(0px) !important;
+        box-shadow: 0 2px 4px rgba(5, 27, 95, 0.2) !important;
+    }
+    /* Apply same styling to all buttons including download buttons */
+    .stDownloadButton > button {
+        background-color: rgb(5, 27, 95) !important;
+        color: white !important;
+        border: 2px solid rgb(5, 27, 95) !important;
+        border-radius: 8px !important;
+        padding: 0.75rem 1.5rem !important;
+        font-weight: 600 !important;
+        font-size: 1rem !important;
+        transition: all 0.3s ease !important;
+        box-shadow: 0 2px 4px rgba(5, 27, 95, 0.2) !important;
+    }
+    .stDownloadButton > button:hover {
+        background-color: #ffffff !important;
+        color: rgb(5, 27, 95) !important;
+        border: 2px solid rgb(5, 27, 95) !important;
+        transform: translateY(-2px) !important;
+        box-shadow: 0 4px 12px rgba(5, 27, 95, 0.3) !important;
+    }
+    .stDownloadButton > button:active {
+        transform: translateY(0px) !important;
+        box-shadow: 0 2px 4px rgba(5, 27, 95, 0.2) !important;
+    }
+    /* File uploader styling to match */
+    .stFileUploader > div > div {
+        background-color: #2c3e50 !important;
+        border-radius: 8px !important;
+    }
     </style>
 """, unsafe_allow_html=True)
 
@@ -602,16 +653,16 @@ if st.button("Consultar probabilidad"):
         with st.spinner("Ejecutando análisis..."):
             try:
                 # Test database connection first
-                from services.pipeline import test_database_connection
-                
-                connection_success = test_database_connection()
+                from libreria.conector import obtener_conexion
+
+                connection_success = obtener_conexion()
                 if not connection_success:
                     st.error("❌ Error de conexión a la base de datos. Verifica:")
                     st.info("• Credenciales de base de datos")
                     st.info("• Estado del servidor de base de datos")
                     st.info("• Conectividad de red")
                 else:
-                    st.info("🔄 Cargando datos desde la base de datos...")
+                    st.markdown('<div class="custom-info">🔄 Cargando datos desde la base de datos...</div>', unsafe_allow_html=True)
                     df = cargar_datos_desde_bd()
                     
                     # Check if DataFrame was loaded successfully
@@ -635,7 +686,7 @@ if st.button("Consultar probabilidad"):
                                 unique_solicitudes = df['SOLICITUD'].unique()[:10]
                                 st.info(f"📋 Algunas solicitudes disponibles: {unique_solicitudes}")
                             else:
-                                st.info("⚙️ Ejecutando modelo de predicción...")
+                                st.markdown('<div class="custom-processing">⚙️ Ejecutando modelo de predicción...</div>', unsafe_allow_html=True)
                                 resultado = preprocesamiento.transform(df_filtered)
                                 st.success("✅ Pipeline ejecutado correctamente.")
                                 
@@ -662,9 +713,9 @@ if st.button("Consultar probabilidad"):
                                     st.warning("⚠️ El pipeline no devolvió resultados.")
                             
             except ValueError as e:
-                st.error(f"❌ Error en el formato del número de solicitud: {str(e)}")
+                st.markdown(f'<div class="custom-error">❌ Error en el formato del número de solicitud: {str(e)}</div>', unsafe_allow_html=True)
             except Exception as e:
-                st.error(f"❌ Error al ejecutar el análisis: {str(e)}")
+                st.markdown(f'<div class="custom-error">❌ Error al ejecutar el análisis: {str(e)}</div>', unsafe_allow_html=True)
                 # Add more detailed error information for debugging
                 import traceback
                 with st.expander("Ver detalles del error"):
