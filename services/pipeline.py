@@ -1,5 +1,10 @@
 import pandas as pd
 import numpy as np
+import warnings
+
+# Suppress scikit-learn version warnings
+warnings.filterwarnings("ignore", category=UserWarning, module="sklearn")
+warnings.filterwarnings("ignore", message=".*InconsistentVersionWarning.*")
 
 def cargar_datos_desde_bd(query="SELECT * FROM TBL_IA_SOLICITUDES"):
     import sys
@@ -309,24 +314,33 @@ def construccion_indicadores(df):
         
 import joblib
 def predecir_con_dos_modelos(df_procesado):
-
+    print(f"🤖 predecir_con_dos_modelos - Input shape: {df_procesado.shape}")
+    
+    if df_procesado.empty or len(df_procesado) == 0:
+        raise ValueError("DataFrame vacío llegó al modelo de predicción.")
+    
+    # Suppress warnings during model loading
+    with warnings.catch_warnings():
+        warnings.filterwarnings("ignore", category=UserWarning, module="sklearn")
+        
         modelo1 = joblib.load('./Modelos_Entrenados/model_RF_27072025.pkl')
         modelo2 = joblib.load('./Modelos_Entrenados/model_RLR_27072025.pkl')
-        peso_modelo1 = 0.4
-        peso_modelo2 = 0.6
         
-        # Verificar que los pesos sumen 1
-        if not np.isclose(peso_modelo1 + peso_modelo2, 1.0):
-            raise ValueError("Los pesos de los modelos deben sumar 1.")
-        
-        # Predecir probabilidades con ambos modelos (probabilidad clase 1)
-        proba1 = modelo1.predict_proba(df_procesado)[:, 1]
-        proba2 = modelo2.predict_proba(df_procesado)[:, 1]
-        
-        # Calcular probabilidad ponderada
-        probabilidad_ponderada = (peso_modelo1 * proba1) + (peso_modelo2 * proba2)
-        
-        return probabilidad_ponderada
+    peso_modelo1 = 0.4
+    peso_modelo2 = 0.6
+    
+    # Verificar que los pesos sumen 1
+    if not np.isclose(peso_modelo1 + peso_modelo2, 1.0):
+        raise ValueError("Los pesos de los modelos deben sumar 1.")
+    
+    # Predecir probabilidades con ambos modelos (probabilidad clase 1)
+    proba1 = modelo1.predict_proba(df_procesado)[:, 1]
+    proba2 = modelo2.predict_proba(df_procesado)[:, 1]
+    
+    # Calcular probabilidad ponderada
+    probabilidad_ponderada = (peso_modelo1 * proba1) + (peso_modelo2 * proba2)
+    
+    return probabilidad_ponderada
 
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import FunctionTransformer
@@ -334,7 +348,7 @@ from sklearn.preprocessing import FunctionTransformer
 ##df = cargar_datos_desde_bd()
 
 preprocesamiento = Pipeline([
-        ('buscar_solicitud', FunctionTransformer(buscar_solicitud)),
+        #('buscar_solicitud', FunctionTransformer(buscar_solicitud)),
         ('convertir_campos_numericos', FunctionTransformer(convertir_campos_numericos)),
         ('transformar_variables_credito', FunctionTransformer(transformar_variables_credito)),
         ('clasificar_motivo_negacion_anterior_exactos', FunctionTransformer(clasificar_motivo_negacion_anterior_exactos)),

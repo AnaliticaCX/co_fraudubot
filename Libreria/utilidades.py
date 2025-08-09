@@ -35,7 +35,7 @@ def mostrar_resultados_comparacion(resultados: Dict[str, Any]) -> None:
     Muestra los resultados de la comparación en la interfaz de Streamlit.
     """
     st.subheader("Resultados de la Comparación")
-    st.write(f"Porcentaje de coincidencia promedio: {resultados['porcentaje']}")
+    st.write(f"Porcentaje de coincidencia: {resultados['porcentaje']}")
     st.write(f"Explicación: {resultados['explicacion']}")
     
     if 'resultados_individuales' in resultados:

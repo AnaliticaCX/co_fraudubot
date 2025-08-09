@@ -12,7 +12,7 @@ from services.extraccion import extraer_texto, extraer_datos_carta_laboral, extr
 from services.comparacion import comparar_documentos
 from services.visual import analizar_documento_visual
 from services.metadatos import extraer_metadatos
-from services.reporte import generar_pdf_report
+from libreria.generador_pdf import generar_pdf_report
 from libreria.utilidades import formatear_valor_monetario
 from services.consulta_rues import consultar_empresa_por_nit
 
@@ -183,6 +183,106 @@ st.markdown("""
     .stFileUploader > div > div {
         background-color: #2c3e50 !important;
         border-radius: 8px !important;
+    }
+    /* Custom alert styling with black text */
+    .custom-info {
+        background-color: #e3f2fd !important;
+        color: #000000 !important;
+        border-left: 4px solid #2196f3 !important;
+        padding: 15px !important;
+        border-radius: 5px !important;
+        margin: 10px 0 !important;
+        font-weight: 600 !important;
+    }
+    .custom-processing {
+        background-color: #f3e5f5 !important;
+        color: #000000 !important;
+        border-left: 4px solid #9c27b0 !important;
+        padding: 15px !important;
+        border-radius: 5px !important;
+        margin: 10px 0 !important;
+        font-weight: 600 !important;
+    }
+    .custom-error {
+        background-color: #ffebee !important;
+        color: #000000 !important;
+        border-left: 4px solid #f44336 !important;
+        padding: 15px !important;
+        border-radius: 5px !important;
+        margin: 10px 0 !important;
+        font-weight: 600 !important;
+    }
+    /* Override Streamlit default alert text colors to black */
+    .stAlert > div {
+        color: #000000 !important;
+    }
+    .stSuccess > div {
+        color: #000000 !important;
+    }
+    .stError > div {
+        color: #000000 !important;
+    }
+    .stWarning > div {
+        color: #000000 !important;
+    }
+    .stInfo > div {
+        color: #000000 !important;
+    }
+    /* Login form styling - black text for inputs */
+    .stTextInput > div > div > input {
+        color: #000000 !important;
+        background-color: #ffffff !important;
+    }
+    .stTextInput label {
+        color: #000000 !important;
+    }
+    /* Password input styling */
+    input[type="password"] {
+        color: #000000 !important;
+        background-color: #ffffff !important;
+    }
+    /* Text input styling for login */
+    .stTextInput > div > div > input {
+        color: #000000 !important;
+        background-color: #ffffff !important;
+        border: 1px solid #ccc !important;
+    }
+    /* Fix cursor color in all input fields including login */
+    .stTextInput > div > div > input {
+        color: #000000 !important;
+        background-color: #ffffff !important;
+        caret-color: #000000 !important;
+        border: 1px solid #ccc !important;
+    }
+    .stNumberInput > div > div > input {
+        color: #000000 !important;
+        background-color: #ffffff !important;
+        caret-color: #000000 !important;
+    }
+    .stTextArea > div > div > textarea {
+        color: #000000 !important;
+        background-color: #ffffff !important;
+        caret-color: #000000 !important;
+    }
+    /* Specific login form styling */
+    input[type="email"], input[type="text"], input[type="password"] {
+        color: #000000 !important;
+        background-color: #ffffff !important;
+        caret-color: #000000 !important;
+        border: 1px solid #ccc !important;
+    }
+    /* Fix cursor in sidebar inputs */
+    section[data-testid="stSidebar"] input {
+        caret-color: #000000 !important;
+        color: #000000 !important;
+    }
+    section[data-testid="stSidebar"] textarea {
+        caret-color: #000000 !important;
+        color: #000000 !important;
+    }
+    /* Force all input elements to have black cursor */
+    input, textarea {
+        caret-color: #000000 !important;
     }
     </style>
 """, unsafe_allow_html=True)
@@ -593,7 +693,7 @@ if uploaded_files:
                 with col_izq:
                     # Mostrar porcentaje y explicaciones
                     st.markdown("#### 📈 Resumen de Coincidencias")
-                    st.markdown(f"<div class='porcentaje-promedio'>Porcentaje Promedio: {resultado['porcentaje']}</div>", unsafe_allow_html=True)
+                    st.markdown(f"<div class='porcentaje-promedio'>Porcentaje Coincidencia: {resultado['porcentaje']}</div>", unsafe_allow_html=True)
                     
                     st.markdown("#### 📝 Explicación Detallada")
                     st.markdown(f"<div class='resumen-comparacion'>{resultado['explicacion']}</div>", unsafe_allow_html=True)
@@ -687,30 +787,37 @@ if st.button("Consultar probabilidad"):
                                 st.info(f"📋 Algunas solicitudes disponibles: {unique_solicitudes}")
                             else:
                                 st.markdown('<div class="custom-processing">⚙️ Ejecutando modelo de predicción...</div>', unsafe_allow_html=True)
-                                resultado = preprocesamiento.transform(df_filtered)
-                                st.success("✅ Pipeline ejecutado correctamente.")
-                                
-                                # Mostrar resultados
-                                if resultado and len(resultado) > 0:
-                                    probabilidad = resultado[0]
-                                    st.markdown(f"""
-                                    <div style="background-color: #e8f5e8; padding: 20px; border-radius: 10px; border-left: 5px solid #4CAF50;">
-                                        <h3 style="color: #2e7d32; margin: 0;">📊 Resultado del Análisis</h3>
-                                        <p style="font-size: 18px; margin: 10px 0; color: #1b5e20;">
-                                            <strong>Probabilidad de fraude: {probabilidad:.2%}</strong>
-                                        </p>
-                                    </div>
-                                    """, unsafe_allow_html=True)
+                                try:
+                                    resultado = preprocesamiento.transform(df_filtered)
+                                    st.markdown('<div class="custom-info">✅ Pipeline ejecutado correctamente.</div>', unsafe_allow_html=True)
                                     
-                                    # Add risk level interpretation
-                                    if probabilidad > 0.7:
-                                        st.error("🚨 RIESGO ALTO - Se recomienda revisión manual inmediata")
-                                    elif probabilidad > 0.4:
-                                        st.warning("⚠️ RIESGO MEDIO - Se recomienda verificación adicional")
+                                    # Mostrar resultados
+                                    if resultado and len(resultado) > 0:
+                                        probabilidad = resultado[0]
+                                        st.markdown(f"""
+                                        <div style="background-color: #e8f5e8; padding: 20px; border-radius: 10px; border-left: 5px solid #4CAF50;">
+                                            <h3 style="color: #000000; margin: 0;">📊 Resultado del Análisis</h3>
+                                            <p style="font-size: 18px; margin: 10px 0; color: #000000;">
+                                                <strong>Probabilidad de fraude: {probabilidad:.2%}</strong>
+                                            </p>
+                                        </div>
+                                        """, unsafe_allow_html=True)
+                                        
+                                        # Add risk level interpretation with black text
+                                        if probabilidad > 0.7:
+                                            st.markdown('<div class="custom-error">🚨 RIESGO ALTO - Se recomienda revisión manual inmediata</div>', unsafe_allow_html=True)
+                                        elif probabilidad > 0.4:
+                                            st.markdown('<div class="custom-processing">⚠️ RIESGO MEDIO - Se recomienda verificación adicional</div>', unsafe_allow_html=True)
+                                        else:
+                                            st.markdown('<div class="custom-info">✅ RIESGO BAJO - Perfil aceptable</div>', unsafe_allow_html=True)
                                     else:
-                                        st.success("✅ RIESGO BAJO - Perfil aceptable")
-                                else:
-                                    st.warning("⚠️ El pipeline no devolvió resultados.")
+                                        st.markdown('<div class="custom-error">⚠️ El pipeline no devolvió resultados.</div>', unsafe_allow_html=True)
+                                
+                                except Exception as pipeline_error:
+                                    st.markdown(f'<div class="custom-error">❌ Error en el pipeline: {str(pipeline_error)}</div>', unsafe_allow_html=True)
+                                    with st.expander("Ver detalles del error del pipeline"):
+                                        import traceback
+                                        st.code(traceback.format_exc())
                             
             except ValueError as e:
                 st.markdown(f'<div class="custom-error">❌ Error en el formato del número de solicitud: {str(e)}</div>', unsafe_allow_html=True)

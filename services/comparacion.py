@@ -13,7 +13,7 @@ def calcular_promedio_coincidencias(resultados_colillas):
     """
     if not resultados_colillas:
         return {
-            "promedio": "0%",
+            "coincidencia": "0%",
             "explicacion": "No hay colillas para comparar",
             "detalles": []
         }
@@ -34,13 +34,13 @@ def calcular_promedio_coincidencias(resultados_colillas):
             continue
     if not porcentajes:
         return {
-            "promedio": "0%",
+            "coincidencia": "0%",
             "explicacion": "No se pudieron procesar los porcentajes",
             "detalles": []
         }
     promedio = sum(porcentajes) / len(porcentajes)
     return {
-        "promedio": f"{promedio:.2f}%",
-        "explicacion": f"Promedio de coincidencia entre {len(porcentajes)} colillas de pago",
+        "coincidencia": f"{promedio:.2f}%",
+        "explicacion": f"coincidencia entre {len(porcentajes)} colillas de pago",
         "detalles": detalles
     } 

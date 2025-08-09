@@ -7,7 +7,7 @@ def mostrar_resultados_comparacion(resultados: Dict[str, Any]):
     Muestra los resultados de la comparación en la interfaz.
     """
     st.subheader("Resultados de la Comparación")
-    st.write(f"Porcentaje de coincidencia promedio: {resultados['resultado_comparacion']['porcentaje']}")
+    st.write(f"Porcentaje de coincidencia: {resultados['resultado_comparacion']['porcentaje']}")
     st.write(f"Explicación: {resultados['resultado_comparacion']['explicacion']}")
     
     # Mostrar resultados individuales

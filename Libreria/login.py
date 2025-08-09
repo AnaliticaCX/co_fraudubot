@@ -23,41 +23,84 @@ def login():
             box-shadow: 0 0 10px rgba(0,0,0,0.1);
         }
 
+        /* Fix input text and cursor color */
         .stTextInput > div > div > input {
-            background-color: #ffffff;
-            color: #333;
-            border-radius: 8px;
-            padding: 10px;
+            background-color: #ffffff !important;
+            color: #000000 !important;
+            border-radius: 8px !important;
+            padding: 10px !important;
+            caret-color: #000000 !important;
+            border: 1px solid #ccc !important;
+        }
+
+        /* Fix password input */
+        input[type="password"] {
+            background-color: #ffffff !important;
+            color: #000000 !important;
+            caret-color: #000000 !important;
+            border: 1px solid #ccc !important;
+        }
+
+        /* Fix input labels */
+        .stTextInput > label {
+            color: #000000 !important;
         }
 
         .stButton > button {
-            background-color: #566ad1;
-            color: white;
-            border-radius: 8px;
-            padding: 10px 20px;
+            background-color: #566ad1 !important;
+            color: white !important;
+            border-radius: 8px !important;
+            padding: 10px 20px !important;
+        }
+
+        /* Login form specific styling */
+        .login-form input {
+            color: #000000 !important;
+            background-color: #ffffff !important;
+            caret-color: #000000 !important;
+        }
+        
+        .login-form label {
+            color: #000000 !important;
+        }
+
+        /* Force all input elements to have black cursor and text */
+        input, textarea {
+            color: #000000 !important;
+            caret-color: #000000 !important;
+        }
+
+        /* Specific targeting for email and password inputs */
+        input[type="email"], input[type="text"] {
+            color: #000000 !important;
+            background-color: #ffffff !important;
+            caret-color: #000000 !important;
         }
     </style>
 """, unsafe_allow_html=True)
+    
     logo = Image.open("img/logo_fraudubot.png")
     col1, col2, col3 = st.columns([4, 4, 4])
     with col2:
         st.image(logo, use_container_width=True)
+    
     col1, col2, col3 = st.columns([1, 2, 1])
     with col2:
-        ##st.markdown('<div class="login-box">', unsafe_allow_html=True)
         st.markdown("""
-    <h1 style='text-align: center; color: #6A95FA; font-size: 1.5em; font-weight: 600;'>
-        Bienvenido
-    </h1>
-    <p style='text-align: center; color: #A9A9A9; font-size: 1.1em;'>
-        Por favor, ingresa tus credenciales para continuar
-    </p>
-""", unsafe_allow_html=True)
-        ##st.title("Iniciar Sesión")
-        correo = st.text_input("Correo")
-        contrasena = st.text_input("Contraseña", type="password")
-        login_boton = st.button("Ingresar")
-        st.markdown('</div>', unsafe_allow_html=True)
+        <h1 style='text-align: center; color: #000000; font-size: 1.5em; font-weight: 600;'>
+            Bienvenido
+        </h1>
+        <p style='text-align: center; color: #000000; font-size: 1.1em;'>
+            Por favor, ingresa tus credenciales para continuar
+        </p>
+        """, unsafe_allow_html=True)
+        
+        with st.form("login_form"):
+            st.markdown('<div class="login-form">', unsafe_allow_html=True)
+            correo = st.text_input("📧 Correo electrónico")
+            contrasena = st.text_input("🔒 Contraseña", type="password")
+            login_boton = st.form_submit_button("Ingresar")
+            st.markdown('</div>', unsafe_allow_html=True)
 
     if login_boton:
         if correo in USUARIOS and USUARIOS[correo]["contrasena"] == contrasena:
